@@ -1,0 +1,33 @@
+{
+    "name": "lvm-discord-bot",
+    "version": "1.0.0",
+    "description": "La Vida Moderna sounds Discord bot",
+    "main": "dist/bot.js",
+    "scripts": {
+        "start": "node dist/Main.js",
+        "build": "npm run build-ts && npm run tslint",
+        "build-ts": "tsc",
+        "tslint": "tslint -c tslint.json -p tsconfig.json",
+        "nohup": "nohup node dist/Main.js > output.log &"
+    },
+    "author": "jsirgo",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jsirgo/lvm-discord-bot.git"
+    },
+    "license": "GPL-3.0",
+    "dependencies": {
+        "@types/ws": "^6.0.1",
+        "bufferutil": "^4.0.1",
+        "discord.js": "github:discordjs/discord.js",
+        "erlpack": "github:hammerandchisel/erlpack",
+        "libsodium-wrappers": "^0.7.4",
+        "node-opus": "^0.3.2"
+    },
+    "devDependencies": {
+        "@types/node": "12.0.8",
+        "tslint": "5.18.0",
+        "tslint-eslint-rules": "5.4.0",
+        "typescript": "3.5.2"
+    }
+}
