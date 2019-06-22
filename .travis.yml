@@ -3,8 +3,7 @@ node_js:
  - "node"
  - "lts/*"
 before_install:
-  - sudo apt-get install build-essential
-  - echo {\"token\":\"FAKE_TOKEN\"} > src/config.json
+  - echo {\"token\":\"FAKE_TOKEN\"} > src/config/config.json
   - chmod +x ./get-sounds.sh && ./get-sounds.sh
 script:
  - npm run build
