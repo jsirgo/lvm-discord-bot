@@ -4,6 +4,7 @@ node_js:
  - "lts/*"
 before_install:
   - echo {\"token\":\"FAKE_TOKEN\"} > src/config.json
+  - chmod +x ./get-sounds.sh && ./get-sounds.sh
 script:
  - npm run build
 branches:
