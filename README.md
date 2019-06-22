@@ -6,7 +6,8 @@
 [![Build Status](https://travis-ci.org/jsirgo/lvm-discord-bot.svg?branch=master)](https://travis-ci.org/jsirgo/lvm-discord-bot)
 
 This bot joins to a voice channel and plays sounds extracted from La Vida Moderna.
-Sound files are retrieved from [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) and [Xatpy/SoundsTable](https://github.com/Xatpy/SoundsTable) projects.
+
+This project is based on [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) and [Xatpy/SoundsTable](https://github.com/Xatpy/SoundsTable) and the sounds have been obtained from those projects.
 
 This code is only intended to work in a private bot, it is not suitable to work for multiple discord servers with a single bot.
 
