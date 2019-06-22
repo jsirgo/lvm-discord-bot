@@ -3,6 +3,7 @@ node_js:
  - "node"
  - "lts/*"
 before_install:
+  - echo {\"token\":\"FAKE_TOKEN\"} > src/config.json
 script:
  - npm run build
 branches:
