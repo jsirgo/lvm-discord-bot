@@ -11,6 +11,7 @@ branches:
  only:
   - master
   - develop
+  - feature/test-without-erlpack
 notifications:
  email:
   on_success: never
