@@ -19,6 +19,7 @@ This code is only intended to work in a private bot, it is not suitable to work 
 
 ## Requirements
 Node.js
+FFMPEG
 
 ### Install node dependencies
 Install dependencies:
@@ -33,7 +34,7 @@ npm install
     "token": "BOT_TOKEN"
 }
 ```
-And replace BOT_TOKEN with the one you get from the Discord Developer Portal.
+Replace BOT_TOKEN with the one you get from the Discord Developer Portal.
 
 ### Set up bot configuration
 To get sounds from [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) execute get-sounds.sh:
@@ -51,12 +52,13 @@ Run the bot:
 npm start
 ```
 
-### Run docker image
-To build the image:
+## Docker
+### Run docker container
+To build the image (Replace BOT_TOKEN with the one you get from the Discord Developer Portal):
 ```shell
-docker build -t lvm-discord-bot .
+docker build --build-arg token=BOT_TOKEN -t lvm-discord-bot .
 ```
-To run the docker image:
+To run the docker container:
 ```shell
 docker run -d lvm-discord-bot
 ```
