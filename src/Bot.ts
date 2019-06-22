@@ -38,6 +38,10 @@ export class Bot {
                     case "help":
                         this.sendHelpMessage(message);
                         break;
+                    case "play":
+                            if(args == null) break;
+                            this.play(args, message);
+                            break;
                     case "send":
                         if(args == null) break;
                         this.send(args, message);
@@ -55,7 +59,23 @@ export class Bot {
     }
 
     private sendHelpMessage(message:Message) {
-        message.channel.send("Help:\n?send - Search a sound by {0} word, joins to {1} voice channel and plays the sound\n?random - Joins to {0} voice channel and plays a random sound");
+        message.channel.send("Help:"
+            +"\n?play - Search a sound by {0} word and plays it in the user voice channel"
+            +"\n?send - Search a sound by {0} word, joins to {1} voice channel and plays the sound"
+            +"\n?random - Joins to {0} voice channel and plays a random sound");
+    }
+
+    private async play(soundName:string, message:Message) {
+        let soundUrl = this.getSound(soundName);
+        if(soundUrl == null) {
+            message.channel.send("Sound not found");
+            return;
+        }
+        if(message.member.voice != null && message.member.voice.channel != null){
+            this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+        }else{
+            message.channel.send("You are not connected to a voice channel");
+        }
     }
 
     private async send(args:string, message:Message) {

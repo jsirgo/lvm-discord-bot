@@ -13,6 +13,7 @@ This code is only intended to work in a private bot, it is not suitable to work 
 
 ## Commands
 * **?help** - Shows the command list
+* **?play {0}** - Search a sound by {0} word and plays it in the user voice channel
 * **?send {0},{1}** - Search a sound by {0} word, joins to {1} voice channel and plays the sound
 * **?random {0}** - Joins to {0} voice channel and plays a random sound
 
