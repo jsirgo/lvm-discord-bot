@@ -35,6 +35,12 @@ npm install
 ```
 And replace BOT_TOKEN with the one you get from the Discord Developer Portal.
 
+### Set up bot configuration
+To get sounds from [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) execute get-sounds.sh:
+```shell
+./get-sounds.sh
+```
+
 ### Build and run
 Build the code:
 ```shell
