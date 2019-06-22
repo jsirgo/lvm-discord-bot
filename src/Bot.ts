@@ -7,6 +7,7 @@ export class Bot {
     private readonly SOUNDS_PATH:string = "resources/sounds/";
 
     private client:Discord.Client;
+    private isBussy:boolean = false;
 
     constructor () {
         this.client = new Discord.Client();
@@ -24,6 +25,10 @@ export class Bot {
 
     private onMessage(message: Message) {
         if (message.content.charAt(0) === "?") {
+            if(this.isBussy){
+                message.channel.send("Wait and retry later, now I´m bussy");
+                return;
+            }
             let regex = new RegExp(/^\?(\w*) (.*)/)
             let match = regex.exec(message.content);
             let cmd = match.length > 1 ? match[1] : null;
@@ -121,14 +126,16 @@ export class Bot {
 
     private joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
         voiceChannel.join().then(connection => {
+            this.isBussy = true;
             connection.play(soundUrl , {
                 volume: 1, 
                 passes: 3
             }).on('end', () => {
-                console.log("Finished")
-                    connection.disconnect();
+                this.isBussy = false;
+                connection.disconnect();
             }).on('error', (error) => {
-                console.log("Error: "+error)
+                this.isBussy = false;
+                console.log("Error: "+error);
             });
         });
     }
