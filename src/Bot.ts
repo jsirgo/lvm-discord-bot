@@ -26,90 +26,75 @@ export class Bot {
 
     private onMessage(message: Message) {
         if (message.content.charAt(0) === "?") {
-            if(this.isBussy){
-                message.channel.send("Wait and retry later, now I´m bussy");
-                return;
-            }
-            let regex = new RegExp(/^\?(\w*) (.*)/)
-            let match = regex.exec(message.content);
-            let cmd = match.length > 1 ? match[1] : null;
-            if(cmd != null){
-                let args = match.length > 2 ? match[2] : null;
-                switch(cmd) {
-                    case "help":
-                        this.sendHelpMessage(message);
-                        break;
-                    case "play":
-                            if(args == null) break;
+            if(!this.isBussy){
+                let match = message.content.match(/^\?(?<command>\w*)( (?<params>.*))?/)
+                let cmd = match.groups['command'];
+                if(cmd != null){
+                    let args = match.groups['params'];
+                    switch(cmd) {
+                        case "help":
+                        case "h":
+                            this.sendHelpMessage(message);
+                            break;
+                        case "play":
+                        case "p":
                             this.play(args, message);
                             break;
-                    case "send":
-                        if(args == null) break;
-                        this.send(args, message);
-                        break;
-                    case "random":
-                        if(args == null) break;
-                        this.sendRandom(args, message);
-                        break;
-                    default:
-                        this.sendHelpMessage(message);
-                        break;
+                        case "playchannel":
+                        case "pc":
+                            this.playChannel(args, message);
+                            break;
+                        default:
+                            this.sendHelpMessage(message);
+                            break;
+                    }
                 }
+            }else{
+                message.channel.send("Wait and retry later, now I´m bussy");
             }
         }
     }
 
     private sendHelpMessage(message:Message) {
         message.channel.send("Help:"
-            +"\n?play - Search a sound by {0} word and plays it in the user voice channel"
-            +"\n?send - Search a sound by {0} word, joins to {1} voice channel and plays the sound"
-            +"\n?random - Joins to {0} voice channel and plays a random sound");
+            +"\n**?play {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound. Shortening: **?p {0}**"
+            +"\n**?playchannel {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one. Shortening: **?pc {0},{1}**");
     }
 
     private async play(soundName:string, message:Message) {
-        let soundUrl = this.getSound(soundName);
-        if(soundUrl == null) {
-            message.channel.send("Sound not found");
-            return;
-        }
-        if(message.member.voice != null && message.member.voice.channel != null){
-            this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+        if(message.member.voice != null && message.member.voice.channel != null) {
+            let soundUrl = soundName != null && soundName.length > 0 ? this.getSound(soundName) : this.getRandomSound();
+            if(soundUrl != null) {
+                this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+            }else{
+                message.channel.send("Sound not found");
+            }
         }else{
             message.channel.send("You are not connected to a voice channel");
         }
     }
 
-    private async send(args:string, message:Message) {
-        if(args != null){
+    private async playChannel(args:string, message:Message) {
+        if(args != null) {
             let params = args.split(",");
-            if(params.length == 2){
-                let soundUrl = this.getSound(params[0]);
-                if(soundUrl == null) {
-                    message.channel.send("Sound not found");
-                    return;
-                }
-                let voiceChannel = this.getChannel(params[1]);
+            if(params[0] != null && params[0].length > 0) {
+                let voiceChannel = this.getChannel(params[0]);
                 if(voiceChannel == null) {
                     message.channel.send("Channel not found");
                     return;
                 }
-                this.joinChannelAndPlaySound(soundUrl, voiceChannel);                  
+                let soundUrl = params[1] != null && params[1].length > 0 ? this.getSound(params[1]) : this.getRandomSound();
+                if(soundUrl != null) {
+                    this.joinChannelAndPlaySound(soundUrl, voiceChannel);    
+                }else{
+                    message.channel.send("Sound not found");
+                }
+            }else{
+                this.sendHelpMessage(message);
             }
+        }else{
+            this.sendHelpMessage(message);
         }
-    }
-
-    private async sendRandom(channelName:string, message:Message) {
-        let soundUrl = this.getRandomSound();
-        if(soundUrl == null) {
-            message.channel.send("Sound not found");
-            return;
-        }
-        let voiceChannel = this.getChannel(channelName);
-        if(voiceChannel == null) {
-            message.channel.send("Channel not found");
-            return;
-        }
-        this.joinChannelAndPlaySound(soundUrl, voiceChannel);
     }
 
     private getChannel(channelName:string):VoiceChannel {

@@ -12,14 +12,13 @@ This project is based on [dmcallejo/lavidamoderna_bot](https://github.com/dmcall
 This code is only intended to work in a private bot, it is not suitable to work for multiple discord servers with a single bot.
 
 ## Commands
-* **?help** - Shows the command list
-* **?play {0}** - Search a sound by {0} word and plays it in the user voice channel
-* **?send {0},{1}** - Search a sound by {0} word, joins to {1} voice channel and plays the sound
-* **?random {0}** - Joins to {0} voice channel and plays a random sound
+* **?help** or **?h** - Shows the command list
+* **?play {0}** or **?p {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound
+* **?playchannel {0},{1}** or **?pc {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one
 
 ## Requirements
-Node.js
-FFMPEG
+* Node.js
+* FFMPEG
 
 ### Install node dependencies
 Install dependencies:
