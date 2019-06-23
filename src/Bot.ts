@@ -16,6 +16,7 @@ export class Bot {
 
         this.client.on("message", (message: Message) => this.onMessage(message));
 
+        this.client.on("error", (error) => console.log("Error: "+error));
     }
 
     public start() {
@@ -140,7 +141,6 @@ export class Bot {
         let size = Data.sounds.length;
         let randomIndex = Math.floor(Math.random() * size)
         let sound = Data.sounds[randomIndex];
-        console.log(this.SOUNDS_PATH + sound.filename);
         return this.SOUNDS_PATH + sound.filename;
     }
 
