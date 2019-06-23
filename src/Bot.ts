@@ -1,13 +1,19 @@
 import Discord, { Message, VoiceChannel } from "discord.js";
 import Config from './config/config.json';
 import Data from './config/data.json';
+import Schedule, { Job } from 'node-schedule';
 
 export class Bot {
 
     private readonly SOUNDS_PATH:string = "resources/sounds/";
+    private readonly TROLL_MODE_ALL:string = "all"
+    private readonly TROLL_MODE_RANDOM:string = "random"
 
     private client:Discord.Client;
     private isBussy:boolean = false;
+    private isTrollModeOn:boolean = false;
+
+    private scheduledTrollExecution:Job;
 
     constructor () {
         this.client = new Discord.Client();
@@ -43,6 +49,12 @@ export class Bot {
                         case "playchannel":
                         case "pc":
                             this.playChannel(args, message);
+                            break;
+                        case "trollOn":
+                            this.trollMode(args, message);
+                            break;
+                        case "trollOff":
+                            this.trollModeOff();
                             break;
                         default:
                             this.sendHelpMessage(message);
@@ -145,4 +157,58 @@ export class Bot {
         });
     }
 
+    private trollMode(args:string, message:Message) {
+        if(args != null) {
+            let params = args.split(",");
+            if(params.length == 4 && !isNaN(Number(params[0])) && !isNaN(Number(params[1])) && !isNaN(Number(params[2]))) {
+                console.log("Troll mode on: "+params[0]+", "+params[1]+", "+params[2]+", "+params[3]+" by "+message.author.username);
+                this.isTrollModeOn = true;
+                this.doTroll(Number(params[0]), Number(params[1]), Number(params[2]), params[3]);
+            }else{
+                this.sendHelpMessage(message);
+            }
+        }else{
+            this.sendHelpMessage(message);
+        }   
+    }
+
+    private trollModeOff() {
+        this.isTrollModeOn = false;
+        this.scheduledTrollExecution.cancel();
+        console.log("Troll mode off");
+    }
+
+    private doTroll(minTime:number, maxTime:number, hitChance:number, channelMode:string) {
+        if(this.isTrollModeOn) {
+            if(Math.random() <= hitChance){
+                let channels = this.getTrollChannels(channelMode);
+                channels.forEach((channel) => {
+                    console.log("Playing sound in: " + channel.name);
+                    this.joinChannelAndPlaySound(this.getRandomSound(), channel);
+                })
+            }
+            // Calculate next troll
+            let minutes = Math.floor(Math.random()*(maxTime-minTime+1)+minTime);
+            let nextDate = new Date();
+            nextDate.setMinutes( nextDate.getMinutes() + minutes );
+            console.log("Next troll play: " + nextDate);
+            // Program next troll execution
+            this.scheduledTrollExecution = Schedule.scheduleJob(nextDate, () => this.doTroll(minTime, maxTime, hitChance, channelMode));
+        }
+    }
+
+    private getTrollChannels(channelMode:string):VoiceChannel[]{
+        if(channelMode == this.TROLL_MODE_ALL){
+            return this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0).map(channel => <VoiceChannel>channel);
+        }else if(channelMode == this.TROLL_MODE_RANDOM){
+            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0);
+            if(channels != null && channels.size > 0){
+                return [<VoiceChannel>channels.random()];
+            }
+        }else{
+            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelMode.toLowerCase()) && channel.members.size > 0);
+            return channels.map(channel => <VoiceChannel>channel);
+        }
+        return null;
+    }
 }
