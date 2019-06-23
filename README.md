@@ -13,11 +13,13 @@ This code is only intended to work in a private bot, it is not suitable to work 
 
 ## Commands
 * **?help** - Shows the command list
+* **?play {0}** - Search a sound by {0} word and plays it in the user voice channel
 * **?send {0},{1}** - Search a sound by {0} word, joins to {1} voice channel and plays the sound
 * **?random {0}** - Joins to {0} voice channel and plays a random sound
 
 ## Requirements
 Node.js
+FFMPEG
 
 ### Install node dependencies
 Install dependencies:
@@ -32,7 +34,13 @@ npm install
     "token": "BOT_TOKEN"
 }
 ```
-And replace BOT_TOKEN with the one you get from the Discord Developer Portal.
+Replace BOT_TOKEN with the one you get from the Discord Developer Portal.
+
+### Set up bot configuration
+To get sounds from [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) execute get-sounds.sh:
+```shell
+./get-sounds.sh
+```
 
 ### Build and run
 Build the code:
@@ -44,12 +52,13 @@ Run the bot:
 npm start
 ```
 
-### Run docker image
-To build the image:
+## Docker
+### Run docker container
+To build the image (Replace BOT_TOKEN with the one you get from the Discord Developer Portal):
 ```shell
-docker build -t lvm-discord-bot .
+docker build --build-arg token=BOT_TOKEN -t lvm-discord-bot .
 ```
-To run the docker image:
+To run the docker container:
 ```shell
 docker run -d lvm-discord-bot
 ```

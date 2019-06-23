@@ -7,6 +7,7 @@ export class Bot {
     private readonly SOUNDS_PATH:string = "resources/sounds/";
 
     private client:Discord.Client;
+    private isBussy:boolean = false;
 
     constructor () {
         this.client = new Discord.Client();
@@ -15,6 +16,7 @@ export class Bot {
 
         this.client.on("message", (message: Message) => this.onMessage(message));
 
+        this.client.on("error", (error) => console.log("Error: "+error));
     }
 
     public start() {
@@ -24,6 +26,10 @@ export class Bot {
 
     private onMessage(message: Message) {
         if (message.content.charAt(0) === "?") {
+            if(this.isBussy){
+                message.channel.send("Wait and retry later, now I´m bussy");
+                return;
+            }
             let regex = new RegExp(/^\?(\w*) (.*)/)
             let match = regex.exec(message.content);
             let cmd = match.length > 1 ? match[1] : null;
@@ -33,6 +39,10 @@ export class Bot {
                     case "help":
                         this.sendHelpMessage(message);
                         break;
+                    case "play":
+                            if(args == null) break;
+                            this.play(args, message);
+                            break;
                     case "send":
                         if(args == null) break;
                         this.send(args, message);
@@ -50,7 +60,23 @@ export class Bot {
     }
 
     private sendHelpMessage(message:Message) {
-        message.channel.send("Help:\n?send - Search a sound by {0} word, joins to {1} voice channel and plays the sound\n?random - Joins to {0} voice channel and plays a random sound");
+        message.channel.send("Help:"
+            +"\n?play - Search a sound by {0} word and plays it in the user voice channel"
+            +"\n?send - Search a sound by {0} word, joins to {1} voice channel and plays the sound"
+            +"\n?random - Joins to {0} voice channel and plays a random sound");
+    }
+
+    private async play(soundName:string, message:Message) {
+        let soundUrl = this.getSound(soundName);
+        if(soundUrl == null) {
+            message.channel.send("Sound not found");
+            return;
+        }
+        if(message.member.voice != null && message.member.voice.channel != null){
+            this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+        }else{
+            message.channel.send("You are not connected to a voice channel");
+        }
     }
 
     private async send(args:string, message:Message) {
@@ -115,20 +141,21 @@ export class Bot {
         let size = Data.sounds.length;
         let randomIndex = Math.floor(Math.random() * size)
         let sound = Data.sounds[randomIndex];
-        console.log(this.SOUNDS_PATH + sound.filename);
         return this.SOUNDS_PATH + sound.filename;
     }
 
     private joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
         voiceChannel.join().then(connection => {
+            this.isBussy = true;
             connection.play(soundUrl , {
                 volume: 1, 
                 passes: 3
             }).on('end', () => {
-                console.log("Finished")
-                    connection.disconnect();
+                this.isBussy = false;
+                connection.disconnect();
             }).on('error', (error) => {
-                console.log("Error: "+error)
+                this.isBussy = false;
+                console.log("Error: "+error);
             });
         });
     }

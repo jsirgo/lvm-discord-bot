@@ -1,4 +1,7 @@
 node_modules/
+package-lock.json
 dist/
 output.log
+resources/sounds
 src/config/config.json
+src/config/data.json
