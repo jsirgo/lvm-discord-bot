@@ -6,8 +6,9 @@ import Schedule, { Job } from 'node-schedule';
 export class Bot {
 
     private readonly SOUNDS_PATH:string = "resources/sounds/";
-    private readonly TROLL_MODE_ALL:string = "all"
-    private readonly TROLL_MODE_RANDOM:string = "random"
+    private readonly TROLL_MODE_ALL:string = "all";
+    private readonly TROLL_MODE_RANDOM:string = "random";
+    private readonly PERMISSION_ADMINISTRATOR = "ADMINISTRATOR";
 
     private client:Discord.Client;
     private isBussy:boolean = false;
@@ -54,7 +55,7 @@ export class Bot {
                             this.trollMode(args, message);
                             break;
                         case "trollOff":
-                            this.trollModeOff();
+                            this.trollModeOff(message);
                             break;
                         default:
                             this.sendHelpMessage(message);
@@ -157,7 +158,7 @@ export class Bot {
     }
 
     private trollMode(args:string, message:Message) {
-        if(args != null) {
+        if(args != null && message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)) {
             let params = args.split(",");
             if(params.length == 4 && !isNaN(Number(params[0])) && !isNaN(Number(params[1])) && !isNaN(Number(params[2]))) {
                 console.log("Troll mode on: "+params[0]+", "+params[1]+", "+params[2]+", "+params[3]+" by "+message.author.username);
@@ -171,10 +172,12 @@ export class Bot {
         }   
     }
 
-    private trollModeOff() {
-        this.isTrollModeOn = false;
-        this.scheduledTrollExecution.cancel();
-        console.log("Troll mode off");
+    private trollModeOff(message:Message) {
+        if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
+            this.isTrollModeOn = false;
+            this.scheduledTrollExecution.cancel();
+            console.log("Troll mode off");
+        }
     }
 
     private doTroll(minTime:number, maxTime:number, hitChance:number, channelMode:string) {
