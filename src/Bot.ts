@@ -141,12 +141,11 @@ export class Bot {
         return this.SOUNDS_PATH + sound.filename;
     }
 
-    private joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
-        voiceChannel.join().then(connection => {
+    private async joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
+        return voiceChannel.join().then(connection => {
             this.isBussy = true;
-            connection.play(soundUrl , {
-                volume: 1, 
-                passes: 3
+            return connection.play(soundUrl , {
+                volume: 1
             }).on('end', () => {
                 this.isBussy = false;
                 connection.disconnect();
@@ -181,18 +180,14 @@ export class Bot {
     private doTroll(minTime:number, maxTime:number, hitChance:number, channelMode:string) {
         if(this.isTrollModeOn) {
             if(Math.random() <= hitChance){
-                let channels = this.getTrollChannels(channelMode);
-                channels.forEach((channel) => {
-                    console.log("Playing sound in: " + channel.name);
-                    this.joinChannelAndPlaySound(this.getRandomSound(), channel);
-                })
+                this.playSoundInMultipleChannels(this.getRandomSound(), this.getTrollChannels(channelMode));
             }
             // Calculate next troll
             let minutes = Math.floor(Math.random()*(maxTime-minTime+1)+minTime);
             let nextDate = new Date();
             nextDate.setMinutes( nextDate.getMinutes() + minutes );
             console.log("Next troll play: " + nextDate);
-            // Program next troll execution
+            // Schedule next troll execution
             this.scheduledTrollExecution = Schedule.scheduleJob(nextDate, () => this.doTroll(minTime, maxTime, hitChance, channelMode));
         }
     }
@@ -210,5 +205,16 @@ export class Bot {
             return channels.map(channel => <VoiceChannel>channel);
         }
         return null;
+    }
+
+    private playSoundInMultipleChannels(soundUrl:string, channels:VoiceChannel[]){
+        if(channels != null && channels.length > 0){
+            let channel:VoiceChannel = channels.pop();
+            this.joinChannelAndPlaySound(soundUrl, channel).then((dispatcher) => {
+                dispatcher.on('end', () => {
+                    this.playSoundInMultipleChannels(soundUrl, channels);
+                });
+            })
+        }
     }
 }
