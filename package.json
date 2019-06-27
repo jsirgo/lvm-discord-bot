@@ -1,7 +1,7 @@
 {
     "name": "lvm-discord-bot",
     "version": "1.2.0",
-    "description": "La Vida Moderna sounds Discord bot",
+    "description": "LVM sounds Discord bot",
     "main": "dist/bot.js",
     "scripts": {
         "start": "node dist/Main.js",

@@ -1,11 +1,11 @@
 # LVM Discord bot
-**La Vida Moderna sounds Discord bot**
+**LVM sounds Discord bot**
 
 [![Build Status](https://travis-ci.org/jsirgo/lvm-discord-bot.svg?branch=develop)](https://travis-ci.org/jsirgo/lvm-discord-bot)
 
 **_Using discord.js@12.0.0-dev version to solve an issue when playing sounds: https://github.com/discordjs/discord.js/issues/2546_**
 
-This bot joins to a voice channel and plays sounds extracted from La Vida Moderna.
+This bot joins to a voice channel and plays sounds extracted from LVM.
 
 This project is based on [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) and [Xatpy/SoundsTable](https://github.com/Xatpy/SoundsTable) and the sounds have been obtained from those projects.
 
