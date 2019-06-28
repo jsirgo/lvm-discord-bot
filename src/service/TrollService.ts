@@ -1,5 +1,5 @@
 import { VoiceChannelService } from "./VoiceChannelService";
-import { VoiceChannel, Client } from "discord.js";
+import { VoiceChannel, Client, TextChannel } from "discord.js";
 import Schedule, { Job } from 'node-schedule';
 import { SoundService } from "./SoundService";
 
@@ -21,16 +21,25 @@ export class TrollService {
         this.soundService = soundService;
     }
 
-    public start(minTime:number, maxTime:number, hitChance:number, channelMode:string){
-        this.isActive = true;
-        console.log("Troll mode: On: "+minTime+", "+maxTime+", "+hitChance+", "+channelMode);
-        this.doTroll(minTime, maxTime, hitChance, channelMode);
+    public start(minTime:number, maxTime:number, hitChance:number, channelMode:string, channel:TextChannel){
+        if(this.isActive) {
+            channel.send("Troll mode is already active");
+        } else {
+            this.isActive = true;
+            console.log("Troll mode: On: "+minTime+", "+maxTime+", "+hitChance+", "+channelMode);
+            this.doTroll(minTime, maxTime, hitChance, channelMode);
+        }
+        
     };
 
-    public stop(){
-        this.isActive = false;
-        this.scheduledTrollExecution.cancel();
-        console.log("Troll mode: Off");
+    public stop(channel:TextChannel){
+        if(this.isActive) {
+            this.isActive = false;
+            this.scheduledTrollExecution.cancel();
+            console.log("Troll mode: Off");
+        } else {
+            channel.send("Troll mode is not active");
+        }
     };
 
     private doTroll(minTime:number, maxTime:number, hitChance:number, channelMode:string) {

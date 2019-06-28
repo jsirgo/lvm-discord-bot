@@ -5,7 +5,7 @@ import FS from 'fs';
 export class SoundService {
 
     private readonly FILE_PATTERN:RegExp = /^(?!-)([aA-zZ0-1-]+-)?data\.json/;
-    private readonly URL_PATTERN:RegExp = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/;
+    private readonly URL_PATTERN:RegExp = /^(?:http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/;
     private readonly SOUND_FILENAME_PATTERN:RegExp = /^[^/?*:;{}\\]+\.[^/?*:;{}\\]+$/;
     private readonly SOUNDS_PATH:string = "resources/sounds/";
 

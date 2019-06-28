@@ -1,4 +1,4 @@
-import Discord, { Message, VoiceChannel } from "discord.js";
+import Discord, { Message, TextChannel } from "discord.js";
 import Config from './config/config.json';
 import { VoiceChannelService } from "./service/VoiceChannelService";
 import { TrollService } from "./service/TrollService";
@@ -119,7 +119,7 @@ export class Bot {
         if(args != null && message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)) {
             let params = args.split(",");
             if(params.length == 4 && !isNaN(Number(params[0])) && !isNaN(Number(params[1])) && !isNaN(Number(params[2]))) {
-                this.trollService.start(Number(params[0]), Number(params[1]), Number(params[2]), params[3]);
+                this.trollService.start(Number(params[0]), Number(params[1]), Number(params[2]), params[3], <TextChannel>message.channel);
             }else{
                 this.sendHelpMessage(message);
             }
@@ -130,7 +130,7 @@ export class Bot {
 
     private trollOff(message:Message) {
         if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
-            this.trollService.stop();
+            this.trollService.stop(<TextChannel>message.channel);
         }
     }
 
