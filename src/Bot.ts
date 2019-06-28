@@ -1,8 +1,8 @@
 import Discord, { Message, VoiceChannel } from "discord.js";
 import Config from './config/config.json';
-import { SoundUtils } from './util/SoundUtils';
-import { VoiceChannelService } from "./service/VoiceChannelService.js";
-import { TrollService } from "./service/TrollService.js";
+import { VoiceChannelService } from "./service/VoiceChannelService";
+import { TrollService } from "./service/TrollService";
+import { SoundService } from "./service/SoundService";
 
 export class Bot {
 
@@ -11,6 +11,7 @@ export class Bot {
     private client:Discord.Client;
     private voiceChannelService:VoiceChannelService;
     private trollService:TrollService;
+    private soundService:SoundService;
 
     constructor () {
         this.client = new Discord.Client();
@@ -21,8 +22,10 @@ export class Bot {
 
         this.client.on("error", (error) => console.log("Error: "+error));
 
+        this.soundService = new SoundService()
         this.voiceChannelService = new VoiceChannelService(this.client);
-        this.trollService = new TrollService(this.client, this.voiceChannelService);
+        this.trollService = new TrollService(this.client, this.voiceChannelService, this.soundService);
+        
     }
 
     /**
@@ -78,7 +81,7 @@ export class Bot {
 
     private async play(soundName:string, message:Message) {
         if(message.member.voice != null && message.member.voice.channel != null) {
-            let sound = soundName != null && soundName.length > 0 ? SoundUtils.getSound(soundName) :  SoundUtils.getRandomSound();
+            let sound = soundName != null && soundName.length > 0 ? this.soundService.getSound(soundName) :  this.soundService.getRandomSound();
             if(sound != null) {
                 this.voiceChannelService.joinVoiceChannelAndPlaySound(sound, message.member.voice.channel);
             }else{
@@ -98,7 +101,7 @@ export class Bot {
                     message.channel.send("Channel not found");
                     return;
                 }
-                let soundUrl = params[1] != null && params[1].length > 0 ? SoundUtils.getSound(params[1]) : SoundUtils.getRandomSound();
+                let soundUrl = params[1] != null && params[1].length > 0 ? this.soundService.getSound(params[1]) : this.soundService.getRandomSound();
                 if(soundUrl != null) {
                     this.voiceChannelService.joinVoiceChannelAndPlaySound(soundUrl, voiceChannel);    
                 }else{

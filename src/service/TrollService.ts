@@ -1,7 +1,7 @@
 import { VoiceChannelService } from "./VoiceChannelService";
-import { SoundUtils } from "../util/SoundUtils";
 import { VoiceChannel, Client } from "discord.js";
 import Schedule, { Job } from 'node-schedule';
+import { SoundService } from "./SoundService";
 
 export class TrollService {
 
@@ -9,14 +9,16 @@ export class TrollService {
     private readonly TROLL_MODE_RANDOM:string = "random";
 
     private voiceChannelService:VoiceChannelService;
+    private soundService:SoundService;
     private client:Client;
 
     private isActive:boolean = false;
     private scheduledTrollExecution:Job;
 
-    constructor(client:Client, voiceChannelService:VoiceChannelService){
+    constructor(client:Client, voiceChannelService:VoiceChannelService, soundService:SoundService){
         this.client = client;
         this.voiceChannelService = voiceChannelService;
+        this.soundService = soundService;
     }
 
     public start(minTime:number, maxTime:number, hitChance:number, channelMode:string){
@@ -35,7 +37,7 @@ export class TrollService {
         if(this.isActive) {
             if(Math.random() <= hitChance){
                 console.log("Troll mode: Playing sound")
-                this.voiceChannelService.playSoundInMultipleVoiceChannels(SoundUtils.getRandomSound(), this.getTrollChannels(channelMode));
+                this.voiceChannelService.playSoundInMultipleVoiceChannels(this.soundService.getRandomSound(), this.getTrollChannels(channelMode));
             }
             // Calculate next troll
             let minutes = Math.floor(Math.random()*(maxTime-minTime+1)+minTime);

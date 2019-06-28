@@ -24,7 +24,7 @@ export class VoiceChannelService {
     public async joinVoiceChannelAndPlaySound(sound:SoundData, voiceChannel:VoiceChannel) {
         return voiceChannel.join().then(connection => {
             this.isBussy = true;
-            return connection.play(sound.getSoundUrl() , {
+            return connection.play(sound.location , {
                 volume: 1
             }).on('end', () => {
                 this.isBussy = false;
