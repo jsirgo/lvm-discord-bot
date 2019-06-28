@@ -1,13 +1,20 @@
 import Discord, { Message, VoiceChannel } from "discord.js";
 import Config from './config/config.json';
 import Data from './config/data.json';
+import Schedule, { Job } from 'node-schedule';
 
 export class Bot {
 
     private readonly SOUNDS_PATH:string = "resources/sounds/";
+    private readonly TROLL_MODE_ALL:string = "all";
+    private readonly TROLL_MODE_RANDOM:string = "random";
+    private readonly PERMISSION_ADMINISTRATOR = "ADMINISTRATOR";
 
     private client:Discord.Client;
     private isBussy:boolean = false;
+    private isTrollModeOn:boolean = false;
+
+    private scheduledTrollExecution:Job;
 
     constructor () {
         this.client = new Discord.Client();
@@ -26,90 +33,81 @@ export class Bot {
 
     private onMessage(message: Message) {
         if (message.content.charAt(0) === "?") {
-            if(this.isBussy){
-                message.channel.send("Wait and retry later, now I´m bussy");
-                return;
-            }
-            let regex = new RegExp(/^\?(\w*) (.*)/)
-            let match = regex.exec(message.content);
-            let cmd = match.length > 1 ? match[1] : null;
-            if(cmd != null){
-                let args = match.length > 2 ? match[2] : null;
-                switch(cmd) {
-                    case "help":
-                        this.sendHelpMessage(message);
-                        break;
-                    case "play":
-                            if(args == null) break;
+            if(!this.isBussy){
+                let match = message.content.match(/^\?(?<command>\w*)( (?<params>.*))?/)
+                let cmd = match.groups['command'];
+                if(cmd != null){
+                    let args = match.groups['params'];
+                    switch(cmd) {
+                        case "help":
+                        case "h":
+                            this.sendHelpMessage(message);
+                            break;
+                        case "play":
+                        case "p":
                             this.play(args, message);
                             break;
-                    case "send":
-                        if(args == null) break;
-                        this.send(args, message);
-                        break;
-                    case "random":
-                        if(args == null) break;
-                        this.sendRandom(args, message);
-                        break;
-                    default:
-                        this.sendHelpMessage(message);
-                        break;
+                        case "playchannel":
+                        case "pc":
+                            this.playChannel(args, message);
+                            break;
+                        case "trollOn":
+                            this.trollMode(args, message);
+                            break;
+                        case "trollOff":
+                            this.trollModeOff(message);
+                            break;
+                        default:
+                            this.sendHelpMessage(message);
+                            break;
+                    }
                 }
+            }else{
+                message.channel.send("Wait and retry later, now I´m bussy");
             }
         }
     }
 
     private sendHelpMessage(message:Message) {
         message.channel.send("Help:"
-            +"\n?play - Search a sound by {0} word and plays it in the user voice channel"
-            +"\n?send - Search a sound by {0} word, joins to {1} voice channel and plays the sound"
-            +"\n?random - Joins to {0} voice channel and plays a random sound");
+            +"\n**?play {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound. Shortening: **?p {0}**"
+            +"\n**?playchannel {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one. Shortening: **?pc {0},{1}**");
     }
 
     private async play(soundName:string, message:Message) {
-        let soundUrl = this.getSound(soundName);
-        if(soundUrl == null) {
-            message.channel.send("Sound not found");
-            return;
-        }
-        if(message.member.voice != null && message.member.voice.channel != null){
-            this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+        if(message.member.voice != null && message.member.voice.channel != null) {
+            let soundUrl = soundName != null && soundName.length > 0 ? this.getSound(soundName) : this.getRandomSound();
+            if(soundUrl != null) {
+                this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+            }else{
+                message.channel.send("Sound not found");
+            }
         }else{
             message.channel.send("You are not connected to a voice channel");
         }
     }
 
-    private async send(args:string, message:Message) {
-        if(args != null){
+    private async playChannel(args:string, message:Message) {
+        if(args != null) {
             let params = args.split(",");
-            if(params.length == 2){
-                let soundUrl = this.getSound(params[0]);
-                if(soundUrl == null) {
-                    message.channel.send("Sound not found");
-                    return;
-                }
-                let voiceChannel = this.getChannel(params[1]);
+            if(params[0] != null && params[0].length > 0) {
+                let voiceChannel = this.getChannel(params[0]);
                 if(voiceChannel == null) {
                     message.channel.send("Channel not found");
                     return;
                 }
-                this.joinChannelAndPlaySound(soundUrl, voiceChannel);                  
+                let soundUrl = params[1] != null && params[1].length > 0 ? this.getSound(params[1]) : this.getRandomSound();
+                if(soundUrl != null) {
+                    this.joinChannelAndPlaySound(soundUrl, voiceChannel);    
+                }else{
+                    message.channel.send("Sound not found");
+                }
+            }else{
+                this.sendHelpMessage(message);
             }
+        }else{
+            this.sendHelpMessage(message);
         }
-    }
-
-    private async sendRandom(channelName:string, message:Message) {
-        let soundUrl = this.getRandomSound();
-        if(soundUrl == null) {
-            message.channel.send("Sound not found");
-            return;
-        }
-        let voiceChannel = this.getChannel(channelName);
-        if(voiceChannel == null) {
-            message.channel.send("Channel not found");
-            return;
-        }
-        this.joinChannelAndPlaySound(soundUrl, voiceChannel);
     }
 
     private getChannel(channelName:string):VoiceChannel {
@@ -144,12 +142,11 @@ export class Bot {
         return this.SOUNDS_PATH + sound.filename;
     }
 
-    private joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
-        voiceChannel.join().then(connection => {
+    private async joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
+        return voiceChannel.join().then(connection => {
             this.isBussy = true;
-            connection.play(soundUrl , {
-                volume: 1, 
-                passes: 3
+            return connection.play(soundUrl , {
+                volume: 1
             }).on('end', () => {
                 this.isBussy = false;
                 connection.disconnect();
@@ -160,4 +157,67 @@ export class Bot {
         });
     }
 
+    private trollMode(args:string, message:Message) {
+        if(args != null && message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)) {
+            let params = args.split(",");
+            if(params.length == 4 && !isNaN(Number(params[0])) && !isNaN(Number(params[1])) && !isNaN(Number(params[2]))) {
+                console.log("Troll mode on: "+params[0]+", "+params[1]+", "+params[2]+", "+params[3]+" by "+message.author.username);
+                this.isTrollModeOn = true;
+                this.doTroll(Number(params[0]), Number(params[1]), Number(params[2]), params[3]);
+            }else{
+                this.sendHelpMessage(message);
+            }
+        }else{
+            this.sendHelpMessage(message);
+        }   
+    }
+
+    private trollModeOff(message:Message) {
+        if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
+            this.isTrollModeOn = false;
+            this.scheduledTrollExecution.cancel();
+            console.log("Troll mode off");
+        }
+    }
+
+    private doTroll(minTime:number, maxTime:number, hitChance:number, channelMode:string) {
+        if(this.isTrollModeOn) {
+            if(Math.random() <= hitChance){
+                this.playSoundInMultipleChannels(this.getRandomSound(), this.getTrollChannels(channelMode));
+            }
+            // Calculate next troll
+            let minutes = Math.floor(Math.random()*(maxTime-minTime+1)+minTime);
+            let nextDate = new Date();
+            nextDate.setMinutes( nextDate.getMinutes() + minutes );
+            console.log("Next troll play: " + nextDate);
+            // Schedule next troll execution
+            this.scheduledTrollExecution = Schedule.scheduleJob(nextDate, () => this.doTroll(minTime, maxTime, hitChance, channelMode));
+        }
+    }
+
+    private getTrollChannels(channelMode:string):VoiceChannel[]{
+        if(channelMode == this.TROLL_MODE_ALL){
+            return this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0).map(channel => <VoiceChannel>channel);
+        }else if(channelMode == this.TROLL_MODE_RANDOM){
+            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0);
+            if(channels != null && channels.size > 0){
+                return [<VoiceChannel>channels.random()];
+            }
+        }else{
+            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelMode.toLowerCase()) && channel.members.size > 0);
+            return channels.map(channel => <VoiceChannel>channel);
+        }
+        return null;
+    }
+
+    private playSoundInMultipleChannels(soundUrl:string, channels:VoiceChannel[]){
+        if(channels != null && channels.length > 0){
+            let channel:VoiceChannel = channels.pop();
+            this.joinChannelAndPlaySound(soundUrl, channel).then((dispatcher) => {
+                dispatcher.on('end', () => {
+                    this.playSoundInMultipleChannels(soundUrl, channels);
+                });
+            })
+        }
+    }
 }

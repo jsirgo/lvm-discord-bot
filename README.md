@@ -12,14 +12,21 @@ This project is based on [dmcallejo/lavidamoderna_bot](https://github.com/dmcall
 This code is only intended to work in a private bot, it is not suitable to work for multiple discord servers with a single bot.
 
 ## Commands
-* **?help** - Shows the command list
-* **?play {0}** - Search a sound by {0} word and plays it in the user voice channel
-* **?send {0},{1}** - Search a sound by {0} word, joins to {1} voice channel and plays the sound
-* **?random {0}** - Joins to {0} voice channel and plays a random sound
+* **?help** or **?h** - Shows the command list
+* **?play {0}** or **?p {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound
+* **?playchannel {0},{1}** or **?pc {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one
+* **?trollOn {0},{1},{2},{3}** - Enables Troll Mode, bot will enter in a random moment in a random or given channel to play a random sound.
+    - **{0}** minTime: Min time in minutes to the bot to check if it has to play a sound again
+    - **{1}** maxTime: Max time to check if it has to to play a sound again
+    - **{2}** hitChance: Number from 0 to 1 to set the probability play the sound
+    - **{3}** channelMode: Could be 'all' to play the sound in all channels, 'random' to do it in a random channel or the name of a certain channel, only joins to a channel and plays the sound if the channel is not empty.
+
+    Bot will generate a time in minutes randomly between minTime and maxTime in order to schedule the next moment to check to play the sound. The sound cand be played or not depending on the hitChance in the scheduled moment, and will continue scheduling executions until ?trollOff is called.
+* **?trollOff** - Disable Troll Mode
 
 ## Requirements
-Node.js
-FFMPEG
+* Node.js
+* FFMPEG
 
 ### Install node dependencies
 Install dependencies:
