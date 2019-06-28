@@ -2,7 +2,7 @@ node_modules/
 package-lock.json
 dist/
 output.log
-resources/
+resources/*
 !resources/README.md
 src/config/config.json
 src/config/data.json
