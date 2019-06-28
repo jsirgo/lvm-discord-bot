@@ -1,5 +1,5 @@
 # Sound Discord bot
-## Sounds and sound data configuration
+## Sound files and sound data configuration
 This folder must contain the sounds used by the bot and also the json files that contain the data regarding the sounds. 
 
 ### Include sound files to the project
@@ -28,6 +28,7 @@ The data regarding this sounds has to be set in a data.json file, there can be s
 The sound filename could be an url but is preferable to have the sounds stored locally in remote/sounds.
 
 **The structure has to be the following:**
+```
 resources/
 ├── sounds/
 │   ├── soundAAA.ogg
@@ -36,4 +37,4 @@ resources/
 ├── data.json
 ├── aaa-data.json
 └── ...
-
+```
