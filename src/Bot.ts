@@ -1,20 +1,17 @@
-import Discord, { Message, VoiceChannel } from "discord.js";
+import Discord, { Message, TextChannel } from "discord.js";
 import Config from './config/config.json';
-import Data from './config/data.json';
-import Schedule, { Job } from 'node-schedule';
+import { VoiceChannelService } from "./service/VoiceChannelService";
+import { TrollService } from "./service/TrollService";
+import { SoundService } from "./service/SoundService";
 
 export class Bot {
 
-    private readonly SOUNDS_PATH:string = "resources/sounds/";
-    private readonly TROLL_MODE_ALL:string = "all";
-    private readonly TROLL_MODE_RANDOM:string = "random";
     private readonly PERMISSION_ADMINISTRATOR = "ADMINISTRATOR";
 
     private client:Discord.Client;
-    private isBussy:boolean = false;
-    private isTrollModeOn:boolean = false;
-
-    private scheduledTrollExecution:Job;
+    private voiceChannelService:VoiceChannelService;
+    private trollService:TrollService;
+    private soundService:SoundService;
 
     constructor () {
         this.client = new Discord.Client();
@@ -24,8 +21,16 @@ export class Bot {
         this.client.on("message", (message: Message) => this.onMessage(message));
 
         this.client.on("error", (error) => console.log("Error: "+error));
+
+        this.soundService = new SoundService()
+        this.voiceChannelService = new VoiceChannelService(this.client);
+        this.trollService = new TrollService(this.client, this.voiceChannelService, this.soundService);
+        
     }
 
+    /**
+     * Starts bot
+     */
     public start() {
         console.log("Login...");
         this.client.login(Config.token);
@@ -33,7 +38,7 @@ export class Bot {
 
     private onMessage(message: Message) {
         if (message.content.charAt(0) === "?") {
-            if(!this.isBussy){
+            if(this.voiceChannelService.isNotBussy()){
                 let match = message.content.match(/^\?(?<command>\w*)( (?<params>.*))?/)
                 let cmd = match.groups['command'];
                 if(cmd != null){
@@ -52,10 +57,10 @@ export class Bot {
                             this.playChannel(args, message);
                             break;
                         case "trollOn":
-                            this.trollMode(args, message);
+                            this.trollOn(args, message);
                             break;
                         case "trollOff":
-                            this.trollModeOff(message);
+                            this.trollOff(message);
                             break;
                         default:
                             this.sendHelpMessage(message);
@@ -76,9 +81,9 @@ export class Bot {
 
     private async play(soundName:string, message:Message) {
         if(message.member.voice != null && message.member.voice.channel != null) {
-            let soundUrl = soundName != null && soundName.length > 0 ? this.getSound(soundName) : this.getRandomSound();
-            if(soundUrl != null) {
-                this.joinChannelAndPlaySound(soundUrl, message.member.voice.channel);
+            let sound = soundName != null && soundName.length > 0 ? this.soundService.getSound(soundName) :  this.soundService.getRandomSound();
+            if(sound != null) {
+                this.voiceChannelService.joinVoiceChannelAndPlaySound(sound, message.member.voice.channel);
             }else{
                 message.channel.send("Sound not found");
             }
@@ -91,14 +96,14 @@ export class Bot {
         if(args != null) {
             let params = args.split(",");
             if(params[0] != null && params[0].length > 0) {
-                let voiceChannel = this.getChannel(params[0]);
+                let voiceChannel = this.voiceChannelService.getVoiceChannel(params[0]);
                 if(voiceChannel == null) {
                     message.channel.send("Channel not found");
                     return;
                 }
-                let soundUrl = params[1] != null && params[1].length > 0 ? this.getSound(params[1]) : this.getRandomSound();
+                let soundUrl = params[1] != null && params[1].length > 0 ? this.soundService.getSound(params[1]) : this.soundService.getRandomSound();
                 if(soundUrl != null) {
-                    this.joinChannelAndPlaySound(soundUrl, voiceChannel);    
+                    this.voiceChannelService.joinVoiceChannelAndPlaySound(soundUrl, voiceChannel);    
                 }else{
                     message.channel.send("Sound not found");
                 }
@@ -110,60 +115,11 @@ export class Bot {
         }
     }
 
-    private getChannel(channelName:string):VoiceChannel {
-        let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelName.toLowerCase()));
-        if(channels.size === 1){
-            return <VoiceChannel>channels.first();
-        }else{
-            return null;
-        }
-    }
-
-    private getSound(soundName:string) {
-        let matchSounds = Data.sounds.filter(sound => sound.tags.toLowerCase().includes(soundName.toLowerCase()));
-        if(matchSounds != null && matchSounds.length > 0){
-            if(matchSounds.length == 1){
-                let sound = matchSounds[0];
-                return this.SOUNDS_PATH + sound.filename;
-            }else{
-                let size = matchSounds.length;
-                let randomIndex = Math.floor(Math.random() * size)
-                let sound = matchSounds[randomIndex];
-                return this.SOUNDS_PATH + sound.filename;
-            }
-        }
-        return null;
-    }
-
-    private getRandomSound() {
-        let size = Data.sounds.length;
-        let randomIndex = Math.floor(Math.random() * size)
-        let sound = Data.sounds[randomIndex];
-        return this.SOUNDS_PATH + sound.filename;
-    }
-
-    private async joinChannelAndPlaySound(soundUrl:string, voiceChannel:VoiceChannel) {
-        return voiceChannel.join().then(connection => {
-            this.isBussy = true;
-            return connection.play(soundUrl , {
-                volume: 1
-            }).on('end', () => {
-                this.isBussy = false;
-                connection.disconnect();
-            }).on('error', (error) => {
-                this.isBussy = false;
-                console.log("Error: "+error);
-            });
-        });
-    }
-
-    private trollMode(args:string, message:Message) {
+    private trollOn(args:string, message:Message) {
         if(args != null && message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)) {
             let params = args.split(",");
             if(params.length == 4 && !isNaN(Number(params[0])) && !isNaN(Number(params[1])) && !isNaN(Number(params[2]))) {
-                console.log("Troll mode on: "+params[0]+", "+params[1]+", "+params[2]+", "+params[3]+" by "+message.author.username);
-                this.isTrollModeOn = true;
-                this.doTroll(Number(params[0]), Number(params[1]), Number(params[2]), params[3]);
+                this.trollService.start(Number(params[0]), Number(params[1]), Number(params[2]), params[3], <TextChannel>message.channel);
             }else{
                 this.sendHelpMessage(message);
             }
@@ -172,52 +128,10 @@ export class Bot {
         }   
     }
 
-    private trollModeOff(message:Message) {
+    private trollOff(message:Message) {
         if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
-            this.isTrollModeOn = false;
-            this.scheduledTrollExecution.cancel();
-            console.log("Troll mode off");
+            this.trollService.stop(<TextChannel>message.channel);
         }
     }
 
-    private doTroll(minTime:number, maxTime:number, hitChance:number, channelMode:string) {
-        if(this.isTrollModeOn) {
-            if(Math.random() <= hitChance){
-                this.playSoundInMultipleChannels(this.getRandomSound(), this.getTrollChannels(channelMode));
-            }
-            // Calculate next troll
-            let minutes = Math.floor(Math.random()*(maxTime-minTime+1)+minTime);
-            let nextDate = new Date();
-            nextDate.setMinutes( nextDate.getMinutes() + minutes );
-            console.log("Next troll play: " + nextDate);
-            // Schedule next troll execution
-            this.scheduledTrollExecution = Schedule.scheduleJob(nextDate, () => this.doTroll(minTime, maxTime, hitChance, channelMode));
-        }
-    }
-
-    private getTrollChannels(channelMode:string):VoiceChannel[]{
-        if(channelMode == this.TROLL_MODE_ALL){
-            return this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0).map(channel => <VoiceChannel>channel);
-        }else if(channelMode == this.TROLL_MODE_RANDOM){
-            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0);
-            if(channels != null && channels.size > 0){
-                return [<VoiceChannel>channels.random()];
-            }
-        }else{
-            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelMode.toLowerCase()) && channel.members.size > 0);
-            return channels.map(channel => <VoiceChannel>channel);
-        }
-        return null;
-    }
-
-    private playSoundInMultipleChannels(soundUrl:string, channels:VoiceChannel[]){
-        if(channels != null && channels.length > 0){
-            let channel:VoiceChannel = channels.pop();
-            this.joinChannelAndPlaySound(soundUrl, channel).then((dispatcher) => {
-                dispatcher.on('end', () => {
-                    this.playSoundInMultipleChannels(soundUrl, channels);
-                });
-            })
-        }
-    }
 }

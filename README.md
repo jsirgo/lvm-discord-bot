@@ -1,13 +1,10 @@
-# LVM Discord bot
-**La Vida Moderna sounds Discord bot**
+# Sound Discord bot
+
+[![Build Status](https://travis-ci.org/jsirgo/sound-discord-bot.svg?branch=develop)](https://travis-ci.org/jsirgo/sound-discord-bot)
 
 **_Using discord.js@12.0.0-dev version to solve an issue when playing sounds: https://github.com/discordjs/discord.js/issues/2546_**
 
-[![Build Status](https://travis-ci.org/jsirgo/lvm-discord-bot.svg?branch=master)](https://travis-ci.org/jsirgo/lvm-discord-bot)
-
-This bot joins to a voice channel and plays sounds extracted from La Vida Moderna.
-
-This project is based on [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) and [Xatpy/SoundsTable](https://github.com/Xatpy/SoundsTable) and the sounds have been obtained from those projects.
+This project is based on [Xatpy/SoundsTable](https://github.com/Xatpy/SoundsTable) and [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot). Sounds and data.json files of the last one are compatible with this bot, see below how to configure this bot.
 
 This code is only intended to work in a private bot, it is not suitable to work for multiple discord servers with a single bot.
 
@@ -24,18 +21,17 @@ This code is only intended to work in a private bot, it is not suitable to work 
     Bot will generate a time in minutes randomly between minTime and maxTime in order to schedule the next moment to check to play the sound. The sound cand be played or not depending on the hitChance in the scheduled moment, and will continue scheduling executions until ?trollOff is called.
 * **?trollOff** - Disable Troll Mode
 
-## Requirements
+## Bot set up and needed steps
+Needed steps for both running with or without Docker
+* Include sounds in resources/sounds and create data.json in resources with the data of the sound files. [More details here](resources/README.md)
+
+## Install and run using Node
+### Requirements
 * Node.js
-* FFMPEG
+* FFMPEG installed in the system
 
-### Install node dependencies
-Install dependencies:
-```shell
-npm install
-```
-
-### Set up bot configuration
-1. Create a config.json in src/config/ with the following content:
+### Set up Discord bot token
+Create a config.json in src/config/ with the following content:
 ```json
 {
     "token": "BOT_TOKEN"
@@ -43,10 +39,10 @@ npm install
 ```
 Replace BOT_TOKEN with the one you get from the Discord Developer Portal.
 
-### Set up bot configuration
-To get sounds from [dmcallejo/lavidamoderna_bot](https://github.com/dmcallejo/lavidamoderna_bot) execute get-sounds.sh:
+### Install node dependencies
+Install dependencies:
 ```shell
-./get-sounds.sh
+npm install
 ```
 
 ### Build and run
@@ -60,14 +56,16 @@ npm start
 ```
 
 ## Docker
+Before building the image is needed to do the steps described in **"Bot set up and needed steps"**
+
 ### Run docker container
 To build the image (Replace BOT_TOKEN with the one you get from the Discord Developer Portal):
 ```shell
-docker build --build-arg token=BOT_TOKEN -t lvm-discord-bot .
+docker build --build-arg token=BOT_TOKEN -t sound-discord-bot .
 ```
 To run the docker container:
 ```shell
-docker run -d lvm-discord-bot
+docker run -d sound-discord-bot
 ```
 
 ### Add bot to discord server

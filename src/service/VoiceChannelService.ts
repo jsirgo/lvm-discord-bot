@@ -1,0 +1,51 @@
+import { Client, VoiceChannel } from "discord.js";
+import { SoundData } from "../data/SoundData";
+
+export class VoiceChannelService {
+
+    private client:Client;
+    private isBussy:boolean = false;
+
+    constructor(client:Client){
+        this.client = client;
+    }
+
+    public playSoundInMultipleVoiceChannels(sound:SoundData, channels:VoiceChannel[]){
+        if(channels != null && channels.length > 0){
+            let channel:VoiceChannel = channels.pop();
+            this.joinVoiceChannelAndPlaySound(sound, channel).then((dispatcher) => {
+                dispatcher.on('end', () => {
+                    this.playSoundInMultipleVoiceChannels(sound, channels);
+                });
+            })
+        }
+    }
+
+    public async joinVoiceChannelAndPlaySound(sound:SoundData, voiceChannel:VoiceChannel) {
+        return voiceChannel.join().then(connection => {
+            this.isBussy = true;
+            return connection.play(sound.location , {
+                volume: 1
+            }).on('end', () => {
+                this.isBussy = false;
+                connection.disconnect();
+            }).on('error', (error) => {
+                this.isBussy = false;
+                console.log("Error: "+error);
+            });
+        });
+    }
+
+    public isNotBussy():boolean{
+        return !this.isBussy;
+    }
+
+    public getVoiceChannel(channelName:string):VoiceChannel {
+        let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelName.toLowerCase()));
+        if(channels.size === 1){
+            return <VoiceChannel>channels.first();
+        }else{
+            return null;
+        }
+    }
+}
