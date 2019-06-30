@@ -1,5 +1,6 @@
 import { Client, VoiceChannel } from "discord.js";
 import { SoundData } from "../data/SoundData";
+import { ClientUtils } from "../util/ClientUtils";
 
 export class VoiceChannelService {
 
@@ -24,13 +25,19 @@ export class VoiceChannelService {
     public async joinVoiceChannelAndPlaySound(sound:SoundData, voiceChannel:VoiceChannel) {
         return voiceChannel.join().then(connection => {
             this.isBussy = true;
+            let previousStatus = this.client.user.presence.status;
+            let previousActivityName = this.client.user.presence.activity != null ? this.client.user.presence.activity.name : null;
+            let PreviousActivityType = this.client.user.presence.activity != null ? this.client.user.presence.activity.type : null;
+            ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_IDLE, sound.text + " in " + voiceChannel.name, ClientUtils.CLIENT_ACTIVITY_TYPE_STREAMING);
             return connection.play(sound.location , {
-                volume: 1
+                volume: 0.5
             }).on('end', () => {
                 this.isBussy = false;
+                ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
                 connection.disconnect();
             }).on('error', (error) => {
                 this.isBussy = false;
+                ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
                 console.log("Error: "+error);
             });
         });

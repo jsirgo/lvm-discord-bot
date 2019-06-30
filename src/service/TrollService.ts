@@ -2,6 +2,7 @@ import { VoiceChannelService } from "./VoiceChannelService";
 import { VoiceChannel, Client, TextChannel } from "discord.js";
 import Schedule, { Job } from 'node-schedule';
 import { SoundService } from "./SoundService";
+import { ClientUtils } from "../util/ClientUtils";
 
 export class TrollService {
 
@@ -26,6 +27,7 @@ export class TrollService {
             channel.send("Troll mode is already active");
         } else {
             this.isActive = true;
+            ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_ONLINE, "👹 "+channelMode+" - Troll mode", ClientUtils.CLIENT_ACTIVITY_TYPE_WATCHING);
             console.log("Troll mode: On: "+minTime+", "+maxTime+", "+hitChance+", "+channelMode);
             this.doTroll(minTime, maxTime, hitChance, channelMode);
         }
@@ -36,6 +38,7 @@ export class TrollService {
         if(this.isActive) {
             this.isActive = false;
             this.scheduledTrollExecution.cancel();
+            ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_ONLINE, null, null);
             console.log("Troll mode: Off");
         } else {
             channel.send("Troll mode is not active");
