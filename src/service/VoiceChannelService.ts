@@ -29,9 +29,7 @@ export class VoiceChannelService {
             let previousActivityName = this.client.user.presence.activity != null ? this.client.user.presence.activity.name : null;
             let PreviousActivityType = this.client.user.presence.activity != null ? this.client.user.presence.activity.type : null;
             ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_IDLE, sound.text + " in " + voiceChannel.name, ClientUtils.CLIENT_ACTIVITY_TYPE_STREAMING);
-            return connection.play(sound.location , {
-                volume: 0.5
-            }).on('end', () => {
+            return connection.play(sound.location).on('end', () => {
                 this.isBussy = false;
                 ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
                 connection.disconnect();
