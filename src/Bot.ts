@@ -7,6 +7,8 @@ import { SoundService } from "./service/SoundService";
 export class Bot {
 
     private readonly PERMISSION_ADMINISTRATOR = "ADMINISTRATOR";
+    
+    private botSymbol = Config.botSymbol != null && Config.botSymbol.length > 0 ? Config.botSymbol : "?";
 
     private client:Discord.Client;
     private voiceChannelService:VoiceChannelService;
@@ -37,9 +39,10 @@ export class Bot {
     }
 
     private onMessage(message: Message) {
-        if (message.content.charAt(0) === "?") {
+        if (message.content.charAt(0) === this.botSymbol) {
             if(this.voiceChannelService.isNotBussy()){
-                let match = message.content.match(/^\?(?<command>\w*)( (?<params>.*))?/)
+                let regexp = new RegExp("/^\\"+this.botSymbol+"(?<command>\\w*)( (?<params>.*))?/");
+                let match = message.content.match(regexp);
                 let cmd = match.groups['command'];
                 if(cmd != null){
                     let args = match.groups['params'];
@@ -62,6 +65,9 @@ export class Bot {
                         case "trollOff":
                             this.trollOff(message);
                             break;
+                        case "refresh":
+                            this.refresh(message);
+                            break;
                         default:
                             this.sendHelpMessage(message);
                             break;
@@ -75,8 +81,8 @@ export class Bot {
 
     private sendHelpMessage(message:Message) {
         message.channel.send("Help:"
-            +"\n**?play {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound. Shortening: **?p {0}**"
-            +"\n**?playchannel {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one. Shortening: **?pc {0},{1}**");
+            +"\n**"+this.botSymbol+"play {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only "+this.botSymbol+"play or "+this.botSymbol+"p), plays a random sound. Shortening: **"+this.botSymbol+"p {0}**"
+            +"\n**"+this.botSymbol+"playchannel {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only "+this.botSymbol+"play {0} or "+this.botSymbol+"p {0}) plays a random one. Shortening: **"+this.botSymbol+"pc {0},{1}**");
     }
 
     private async play(soundName:string, message:Message) {
@@ -131,6 +137,12 @@ export class Bot {
     private trollOff(message:Message) {
         if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
             this.trollService.stop(<TextChannel>message.channel);
+        }
+    }
+
+    private refresh(message:Message){
+        if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
+            this.soundService.loadSounds();
         }
     }
 

@@ -12,16 +12,18 @@ export class SoundService {
     private sounds:Array<SoundData>;
 
     constructor(){
+        this.loadSounds();
+    }
+
+    public loadSounds(){
         FS.readdir("resources/", (err, files) => {
-            let soundData:SoundDataList[];
             this.sounds = new Array<SoundData>();
             files.filter(file => file.match(this.FILE_PATTERN)).forEach(file => {
                 var dataList:SoundDataList = require("../../resources/"+file);
                 this.sounds = this.sounds.concat(dataList.sounds)
                 console.log("Loaded "+file+" data file");
             });
-          });
-
+        });
     }
 
     public getRandomSound(): SoundData {
