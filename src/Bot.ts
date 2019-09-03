@@ -24,6 +24,10 @@ export class Bot {
 
         this.client.on("error", (error) => console.log("Error: "+error));
 
+        this.client.on('disconnect', function () {
+            clearTimeout(this.client.ws.connection.ratelimit.resetTimer);
+        });
+
         this.soundService = new SoundService()
         this.voiceChannelService = new VoiceChannelService(this.client);
         this.trollService = new TrollService(this.client, this.voiceChannelService, this.soundService);
@@ -41,7 +45,7 @@ export class Bot {
     private onMessage(message: Message) {
         if (message.content.charAt(0) === this.botSymbol) {
             if(this.voiceChannelService.isNotBussy()){
-                let regexp = new RegExp("/^\\"+this.botSymbol+"(?<command>\\w*)( (?<params>.*))?/");
+                let regexp = new RegExp("^\\"+this.botSymbol+"(?<command>\\w*)( (?<params>.*))?");
                 let match = message.content.match(regexp);
                 let cmd = match.groups['command'];
                 if(cmd != null){
@@ -67,6 +71,10 @@ export class Bot {
                             break;
                         case "refresh":
                             this.refresh(message);
+                            break;
+                        case "list":
+                        case "l":
+                            this.listSounds(message);
                             break;
                         default:
                             this.sendHelpMessage(message);
@@ -146,4 +154,16 @@ export class Bot {
         }
     }
 
+    private listSounds(message:Message){
+        if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
+            let sounds = this.soundService.getSoundTextList();
+            let messageString:string = "";
+            sounds.forEach(sound =>  {
+                messageString = messageString + "\n" + sound.filename;
+                messageString = messageString + "\n\t Text: " + sound.text;
+                messageString = messageString + "\n\t Tags: " + sound.tags;
+            });
+            message.channel.send(messageString);
+        }
+    }
 }

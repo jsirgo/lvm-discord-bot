@@ -19,8 +19,9 @@ export class SoundService {
         FS.readdir("resources/", (err, files) => {
             this.sounds = new Array<SoundData>();
             files.filter(file => file.match(this.FILE_PATTERN)).forEach(file => {
-                var dataList:SoundDataList = require("../../resources/"+file);
-                this.sounds = this.sounds.concat(dataList.sounds)
+                let jsonString = FS.readFileSync("resources/"+file,'utf8');
+                let dataList = JSON.parse(jsonString);
+                this.sounds = this.sounds.concat(dataList.sounds);
                 console.log("Loaded "+file+" data file");
             });
         });
@@ -62,5 +63,9 @@ export class SoundService {
 
     private isFilename(filename:string) {
         return this.SOUND_FILENAME_PATTERN.test(filename);
+    }
+
+    public getSoundTextList():Array<SoundData>{
+        return this.sounds;
     }
 }
