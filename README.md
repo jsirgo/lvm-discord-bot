@@ -61,7 +61,7 @@ Before building the image is needed to do the steps described in **"Bot set up a
 ### Run docker container
 To build the image (Replace BOT_TOKEN with the one you get from the Discord Developer Portal):
 ```shell
-docker build --build-arg token=BOT_TOKEN -t sound-discord-bot .
+docker build --build-arg token=BOT_TOKEN --build-arg symbol=? -t sound-discord-bot .
 ```
 To run the docker container:
 ```shell
