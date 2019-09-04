@@ -7,6 +7,7 @@ import { SoundService } from "./service/SoundService";
 export class Bot {
 
     private readonly PERMISSION_ADMINISTRATOR = "ADMINISTRATOR";
+    private readonly FILE_NAME_PATTERN:RegExp = /^[aA-zZ-]*\.ogg$/
     
     private botSymbol = Config.botSymbol != null && Config.botSymbol.length > 0 ? Config.botSymbol : "?";
 
@@ -14,6 +15,12 @@ export class Bot {
     private voiceChannelService:VoiceChannelService;
     private trollService:TrollService;
     private soundService:SoundService;
+
+    private addingSoundStep:number = 0;
+    private userAddingSound:string;
+    private tempAttachmentUrl:string;
+    private tempText:string;
+    private tempTags:string;
 
     constructor () {
         this.client = new Discord.Client();
@@ -44,6 +51,9 @@ export class Bot {
 
     private onMessage(message: Message) {
         if (message.content.charAt(0) === this.botSymbol) {
+            if(this.addingSoundStep > 0){
+                this.stopWaitingForSound(message);
+            }
             if(this.voiceChannelService.isNotBussy()){
                 let regexp = new RegExp("^\\"+this.botSymbol+"(?<command>\\w*)( (?<params>.*))?");
                 let match = message.content.match(regexp);
@@ -72,6 +82,9 @@ export class Bot {
                         case "refresh":
                             this.refresh(message);
                             break;
+                        case "add":
+                            this.addSoundStep0(message);
+                            break;
                         case "list":
                         case "l":
                             this.listSounds(message);
@@ -84,6 +97,22 @@ export class Bot {
             }else{
                 message.channel.send("Wait and retry later, now I´m bussy");
             }
+        }else if (this.addingSoundStep > 0){
+            switch(this.addingSoundStep) {
+                case 1:
+                    this.addSoundStep1(message);
+                    break;
+                case 2:
+                    this.addSoundStep2(message);
+                    break;
+                case 3:
+                    this.addSoundStep3(message);
+                    break;
+                default:
+                    this.stopWaitingForSound(message);
+                    break;
+            }
+            
         }
     }
 
@@ -166,4 +195,77 @@ export class Bot {
             message.channel.send(messageString);
         }
     }
+
+    private addSoundStep0(message:Message){
+        if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
+            this.userAddingSound = message.member.id;
+            this.addingSoundStep = 1;
+            message.channel.send("Ok, adding a new sound send it here:");
+        }
+    }
+
+    private addSoundStep1(message:Message){
+        if(message.member.id == this.userAddingSound){
+            if(message.attachments != null && message.attachments.size > 0){
+                let attachment = message.attachments.first();
+                let tempName = attachment.url.split("/");
+                let fileName = tempName[tempName.length-1]
+                if(this.FILE_NAME_PATTERN.test(fileName)){
+                    this.tempAttachmentUrl = attachment.url;
+                    this.addingSoundStep = 2;
+                    message.channel.send("Write what is played in the sound:");
+                }else{
+                    message.channel.send("File should be an ogg and name should be composed by letters or/and hyphens.\nSound import proccess stopped.");
+                    this.clearAddSoundProccess();
+                }
+            }else{
+                this.stopWaitingForSound(message);
+            }
+        }
+    }
+
+    private addSoundStep2(message:Message){
+        if(message.member.id == this.userAddingSound){
+            if(message.content != null && message.content.length >= 5 && message.content.length <= 200){
+                this.tempText = message.content;
+                this.addingSoundStep = 3;
+                message.channel.send("Write some tags that describes the sound:");
+            }else{
+                message.channel.send("Text should be at least 5 characters long and not greater than 200, try to write it again:");
+            }
+        }
+    }
+
+    private addSoundStep3(message:Message){
+        if(message.member.id == this.userAddingSound){
+            if(message.content != null && message.content.length >= 3 && message.content.length <= 100){
+                this.tempTags = message.content;
+                this.soundService.addNewSound(this.tempAttachmentUrl, this.tempText, this.tempTags).then((success) => {
+                    if(success){
+                        this.clearAddSoundProccess();
+                        message.channel.send("Sound imported successfuly");
+                    }else{
+                        this.clearAddSoundProccess();
+                        message.channel.send("Oups, Wild ERROR appeared!\nSound import proccess stopped.");
+                    }
+                });
+            }else{
+                message.channel.send("Total tags length should be at least 3 characters long and not greater than 100, try to write it again:");
+            }
+        }
+    }
+
+    private stopWaitingForSound(message:Message){
+        this.clearAddSoundProccess();
+        message.channel.send("No sound, no party.\nSound import proccess stopped.");
+    }
+
+    private clearAddSoundProccess(){
+        this.addingSoundStep = 0;
+        this.userAddingSound = null;
+        this.tempAttachmentUrl = null;
+        this.tempText = null;
+        this.tempTags = null;
+    }
+
 }
