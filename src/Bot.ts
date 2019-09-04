@@ -229,7 +229,7 @@ export class Bot {
             if(message.content != null && message.content.length >= 5 && message.content.length <= 200){
                 this.tempText = message.content;
                 this.addingSoundStep = 3;
-                message.channel.send("Write some tags that describes the sound:");
+                message.channel.send("Write some tags that describes the sound separated by blank space:");
             }else{
                 message.channel.send("Text should be at least 5 characters long and not greater than 200, try to write it again:");
             }
