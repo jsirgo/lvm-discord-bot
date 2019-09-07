@@ -2,6 +2,7 @@ import { SoundData } from '../data/SoundData';
 import Request from 'request';
 import FS from 'fs';
 import { SoundDataList } from '../data/SoundDataList';
+import { AddSoundProcessData } from '../data/AddSoundProcessData';
 
 export class SoundService {
 
@@ -73,18 +74,18 @@ export class SoundService {
         return this.SOUND_FILENAME_PATTERN.test(filename);
     }
 
-    public addNewSound(url:string, text:string, tags:string):Promise<boolean> {
+    public addNewSound(addSoundProcessData:AddSoundProcessData):Promise<boolean> {
         let promise = new Promise<boolean>((resolve, reject) => {
-            let tempName = url.split("/");
+            let tempName = addSoundProcessData.getFileUrl().split("/");
             let fileName = tempName[tempName.length-1];
             let sound:SoundData = {
-                filename:fileName,
-                text:text,
-                tags:tags
+                filename: fileName,
+                text: addSoundProcessData.getText(),
+                tags: addSoundProcessData.getTags()
             }
             console.log("Importing sound: "+JSON.stringify(sound));
-            Request.get(url).on('error', (err) => {
-                console.error("Error getting file from "+url+": "+err);
+            Request.get(addSoundProcessData.getFileUrl()).on('error', (err) => {
+                console.error("Error getting file from "+addSoundProcessData.getFileUrl()+": "+err);
                 resolve(false);
             }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on('finish',() => {
                 try{
