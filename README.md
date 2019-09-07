@@ -9,17 +9,20 @@ This project is based on [Xatpy/SoundsTable](https://github.com/Xatpy/SoundsTabl
 This code is only intended to work in a private bot, it is not suitable to work for multiple discord servers with a single bot.
 
 ## Commands
-* **?help** or **?h** - Shows the command list
-* **?play {0}** or **?p {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound
-* **?playchannel {0},{1}** or **?pc {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one
-* **?trollOn {0},{1},{2},{3}** - Enables Troll Mode, bot will enter in a random moment in a random or given channel to play a random sound.
+* **?help** or **?h** - Shows the command list.
+* **?play {0}** or **?p {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only ?play or ?p), plays a random sound.
+* **?playchannel {0},{1}** or **?pc {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only ?play {0} or ?p {0}) plays a random one.
+* **?list** or **?l** - Lists available sounds.
+* **?trollOn {0},{1},{2},{3}** - (Only admins) Enables Troll Mode, bot will enter in a random moment in a random or given channel to play a random sound.
     - **{0}** minTime: Min time in minutes to the bot to check if it has to play a sound again
     - **{1}** maxTime: Max time to check if it has to to play a sound again
     - **{2}** hitChance: Number from 0 to 1 to set the probability play the sound
     - **{3}** channelMode: Could be 'all' to play the sound in all channels, 'random' to do it in a random channel or the name of a certain channel, only joins to a channel and plays the sound if the channel is not empty.
 
     Bot will generate a time in minutes randomly between minTime and maxTime in order to schedule the next moment to check to play the sound. The sound cand be played or not depending on the hitChance in the scheduled moment, and will continue scheduling executions until ?trollOff is called.
-* **?trollOff** - Disable Troll Mode
+* **?trollOff** - (Only admins) Disable Troll Mode.
+* **?refresh** - (Only admins) Reloads sounds configuration.
+* **?add** - (Only admins) Starts a dialog to add a new sound, type 'cancel' in any of the steps to stop the process.
 
 ## Bot set up and needed steps
 Needed steps for both running with or without Docker
@@ -38,6 +41,14 @@ Create a config.json in src/config/ with the following content:
 }
 ```
 Replace BOT_TOKEN with the one you get from the Discord Developer Portal.
+
+Bot command symbol can be customized setting a new property "botSymbol" in the json file (In the following example it will set as symbol % instead of ?):
+```json
+{
+    "token": "BOT_TOKEN",
+    "botSymbol": "%"
+}
+```
 
 ### Install node dependencies
 Install dependencies:
@@ -61,7 +72,11 @@ Before building the image is needed to do the steps described in **"Bot set up a
 ### Run docker container
 To build the image (Replace BOT_TOKEN with the one you get from the Discord Developer Portal):
 ```shell
-docker build --build-arg token=BOT_TOKEN --build-arg symbol=? -t sound-discord-bot .
+docker build --build-arg token=BOT_TOKEN -t sound-discord-bot .
+```
+Bot command symbol can be customized passing symbol build arg (In the following example it will set as symbol % instead of ?):
+```shell
+docker build --build-arg token=BOT_TOKEN --build-arg symbol=% -t sound-discord-bot .
 ```
 To run the docker container:
 ```shell

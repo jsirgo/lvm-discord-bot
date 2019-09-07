@@ -119,7 +119,8 @@ export class Bot {
     private sendHelpMessage(message:Message) {
         message.channel.send("Help:"
             +"\n**"+this.botSymbol+"play {0}** - Search a sound by {0} word and plays it in the user voice channel, If no word is passed (Only "+this.botSymbol+"play or "+this.botSymbol+"p), plays a random sound. Shortening: **"+this.botSymbol+"p {0}**"
-            +"\n**"+this.botSymbol+"playchannel {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only "+this.botSymbol+"play {0} or "+this.botSymbol+"p {0}) plays a random one. Shortening: **"+this.botSymbol+"pc {0},{1}**");
+            +"\n**"+this.botSymbol+"playchannel {0},{1}** - Joins to voice channel {0} and plays {1} sound, if no sound passed (Only "+this.botSymbol+"play {0} or "+this.botSymbol+"p {0}) plays a random one. Shortening: **"+this.botSymbol+"pc {0},{1}**"
+            +"\n**"+this.botSymbol+"list** - Lists available sounds. Shortening: **"+this.botSymbol+"l**");
     }
 
     private async play(soundName:string, message:Message) {
@@ -184,16 +185,21 @@ export class Bot {
     }
 
     private listSounds(message:Message){
+        let sounds = this.soundService.getSoundTextList();
+        let messageString:string = "";
         if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
-            let sounds = this.soundService.getSoundTextList();
-            let messageString:string = "";
             sounds.forEach(sound =>  {
                 messageString = messageString + "\n" + sound.filename;
                 messageString = messageString + "\n\t Text: " + sound.text;
                 messageString = messageString + "\n\t Tags: " + sound.tags;
             });
-            message.channel.send(messageString);
+        }else{
+            sounds.forEach(sound =>  {
+                messageString = messageString + "\n" + sound.text;
+                messageString = messageString + "\n\t Tags: " + sound.tags;
+            });
         }
+        message.channel.send(messageString);
     }
 
     private addSoundStep0(message:Message){
