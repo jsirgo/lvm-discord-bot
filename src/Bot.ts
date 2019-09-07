@@ -4,14 +4,16 @@ import { VoiceChannelService } from "./service/VoiceChannelService";
 import { TrollService } from "./service/TrollService";
 import { SoundService } from "./service/SoundService";
 import { AddSoundProcessData } from "./data/AddSoundProcessData.js";
+import { ConfigData } from "./data/ConfigData.js";
 
 export class Bot {
 
     private readonly PERMISSION_ADMINISTRATOR = "ADMINISTRATOR";
     private readonly FILE_NAME_PATTERN:RegExp = /^[aA-zZ-]*\.ogg$/
     private readonly CANCEL_ADD_SOUND_PROCESS = "cancel";
+    private readonly DEFAULT_BOT_SYMBOL = "?";
     
-    private botSymbol = Config.botSymbol != null && Config.botSymbol.length > 0 ? Config.botSymbol : "?";
+    private botSymbol = (<ConfigData>Config).botSymbol != null && (<ConfigData>Config).botSymbol.length > 0 ? (<ConfigData>Config).botSymbol : this.DEFAULT_BOT_SYMBOL;
 
     private client:Discord.Client;
     private voiceChannelService:VoiceChannelService;
