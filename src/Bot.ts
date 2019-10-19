@@ -12,6 +12,7 @@ export class Bot {
     private readonly FILE_NAME_PATTERN:RegExp = /^[aA-zZ-]*\.ogg$/
     private readonly CANCEL_ADD_SOUND_PROCESS = "cancel";
     private readonly DEFAULT_BOT_SYMBOL = "?";
+    private readonly MAX_MESSAGE_LENGTH = 2000;
     
     private botSymbol = (<ConfigData>Config).botSymbol != null && (<ConfigData>Config).botSymbol.length > 0 ? (<ConfigData>Config).botSymbol : this.DEFAULT_BOT_SYMBOL;
 
@@ -191,14 +192,24 @@ export class Bot {
         let messageString:string = "";
         if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
             sounds.forEach(sound =>  {
-                messageString = messageString + "\n" + sound.filename;
-                messageString = messageString + "\n\t Text: " + sound.text;
-                messageString = messageString + "\n\t Tags: " + sound.tags;
+                let newSound:string = "\n" + sound.filename
+                + "\n\t Text: " + sound.text
+                + "\n\t Tags: " + sound.tags;
+                if(messageString.length + newSound.length >= this.MAX_MESSAGE_LENGTH) {
+                    message.channel.send(messageString);
+                    messageString = "";
+                }
+                messageString = messageString + newSound;
             });
         }else{
             sounds.forEach(sound =>  {
-                messageString = messageString + "\n" + sound.text;
-                messageString = messageString + "\n\t Tags: " + sound.tags;
+                let newSound:string = "\n" + sound.text
+                + "\n\t Tags: " + sound.tags;
+                if(messageString.length + newSound.length >= this.MAX_MESSAGE_LENGTH) {
+                    message.channel.send(messageString);
+                    messageString = "";
+                }
+                messageString = messageString + newSound;
             });
         }
         message.channel.send(messageString);
