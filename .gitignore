@@ -6,3 +6,5 @@ resources/*
 !resources/README.md
 src/config/config.json
 src/config/data.json
+cert.pem
+key.pem

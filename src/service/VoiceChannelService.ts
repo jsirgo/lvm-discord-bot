@@ -1,6 +1,6 @@
 import { Client, VoiceChannel } from "discord.js";
-import { SoundData } from "../data/SoundData";
-import { ClientUtils } from "../util/ClientUtils";
+import { Sound } from "../interface";
+import { ClientUtils } from "../util";
 
 export class VoiceChannelService {
 
@@ -11,7 +11,7 @@ export class VoiceChannelService {
         this.client = client;
     }
 
-    public playSoundInMultipleVoiceChannels(sound:SoundData, channels:VoiceChannel[]){
+    public playSoundInMultipleVoiceChannels(sound:Sound, channels:VoiceChannel[]){
         if(channels != null && channels.length > 0){
             let channel:VoiceChannel = channels.pop();
             this.joinVoiceChannelAndPlaySound(sound, channel).then((dispatcher) => {
@@ -22,7 +22,7 @@ export class VoiceChannelService {
         }
     }
 
-    public async joinVoiceChannelAndPlaySound(sound:SoundData, voiceChannel:VoiceChannel) {
+    public async joinVoiceChannelAndPlaySound(sound:Sound, voiceChannel:VoiceChannel) {
         return voiceChannel.join().then(connection => {
             this.isBussy = true;
             let previousStatus = this.client.user.presence.status;

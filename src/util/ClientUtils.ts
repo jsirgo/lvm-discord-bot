@@ -1,4 +1,4 @@
-import { Client, PresenceStatusData, PresenceData, Presence } from "discord.js";
+import { Client, PresenceStatusData } from "discord.js";
 
 export class ClientUtils {
 

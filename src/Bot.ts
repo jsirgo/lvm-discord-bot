@@ -1,10 +1,9 @@
-import Discord, { Message, TextChannel } from "discord.js";
-import Config from './config/config.json';
+import Discord, { Message, TextChannel, Guild, VoiceChannel } from "discord.js";
+import config from './config/config.json';
 import { VoiceChannelService } from "./service/VoiceChannelService";
-import { TrollService } from "./service/TrollService";
-import { SoundService } from "./service/SoundService";
-import { AddSoundProcessData } from "./data/AddSoundProcessData.js";
-import { ConfigData } from "./data/ConfigData.js";
+import { TrollService, SoundService } from "./service";
+import { AddSoundProcessData } from "./models";
+import { Config } from "./interface";
 
 export class Bot {
 
@@ -14,7 +13,7 @@ export class Bot {
     private readonly DEFAULT_BOT_SYMBOL = "?";
     private readonly MAX_MESSAGE_LENGTH = 2000;
     
-    private botSymbol = (<ConfigData>Config).botSymbol != null && (<ConfigData>Config).botSymbol.length > 0 ? (<ConfigData>Config).botSymbol : this.DEFAULT_BOT_SYMBOL;
+    private botSymbol = (<Config>config).botSymbol != null && (<Config>config).botSymbol.length > 0 ? (<Config>config).botSymbol : this.DEFAULT_BOT_SYMBOL;
 
     private client:Discord.Client;
     private voiceChannelService:VoiceChannelService;
@@ -49,7 +48,7 @@ export class Bot {
      */
     public start() {
         console.log("Login...");
-        this.client.login(Config.token);
+        this.client.login(config.token);
     }
 
     private onMessage(message: Message) {
@@ -148,9 +147,9 @@ export class Bot {
                     message.channel.send("Channel not found");
                     return;
                 }
-                let soundUrl = params[1] != null && params[1].length > 0 ? this.soundService.getSound(params[1]) : this.soundService.getRandomSound();
-                if(soundUrl != null) {
-                    this.voiceChannelService.joinVoiceChannelAndPlaySound(soundUrl, voiceChannel);    
+                let sound = params[1] != null && params[1].length > 0 ? this.soundService.getSound(params[1]) : this.soundService.getRandomSound();
+                if(sound != null) {
+                    this.voiceChannelService.joinVoiceChannelAndPlaySound(sound, voiceChannel);    
                 }else{
                     message.channel.send("Sound not found");
                 }
@@ -188,7 +187,7 @@ export class Bot {
     }
 
     private listSounds(message:Message){
-        let sounds = this.soundService.getSoundTextList();
+        let sounds = this.soundService.getSounds();
         let messageString:string = "";
         if(message.member.hasPermission(this.PERMISSION_ADMINISTRATOR)){
             sounds.forEach(sound =>  {
@@ -282,6 +281,38 @@ export class Bot {
 
     private clearAddSoundProcess(){
         this.addSoundProcessData = new AddSoundProcessData();
+    }
+
+    public getVoiceChannelService(){
+        return this.voiceChannelService;
+    }
+
+    public getSoundService(){
+        return this.soundService;
+    }
+
+    public getBotGuilds(): Guild[]{
+        if(this.client != null){
+            return this.client.guilds.array();
+        }
+        return null;
+    }
+
+    public playSoundInChannel(fileName: string, channelId: string): boolean{
+        if(this.voiceChannelService.isNotBussy()){
+            // At the moment expecting only one guild
+            let voiceChannels = this.client.guilds.first().channels.filter(channel => channel.type == 'voice' && channel.id == channelId);
+            let sound = this.soundService.getSoundByFileName(fileName);
+            if(voiceChannels.size == 1 && sound != null){
+                this.voiceChannelService.joinVoiceChannelAndPlaySound(sound, <VoiceChannel>voiceChannels.first()); 
+                return true;
+            }else{
+                console.error("Error playing sound in channel: " + fileName + " - " + channelId);
+            }
+        }else{
+            console.log("Can´t play sound, bot is bussy: " + fileName + " - " + channelId);
+        }
+        return false;
     }
 
 }

@@ -1,8 +1,7 @@
-import { SoundData } from '../data/SoundData';
 import Request from 'request';
 import FS from 'fs';
-import { SoundDataList } from '../data/SoundDataList';
-import { AddSoundProcessData } from '../data/AddSoundProcessData';
+import { SoundList, Sound } from '../interface';
+import { AddSoundProcessData } from '../models';
 
 export class SoundService {
 
@@ -14,7 +13,7 @@ export class SoundService {
     private readonly DEFAULT_DATA_FILE_NAME:string = "sound-data.json";
     private readonly DEFAULT_DATA_FILE_TITLE:string = "sound-data.json";
 
-    private sounds:Array<SoundData>;
+    private sounds:Array<Sound>;
 
     constructor(){
         this.loadSounds();
@@ -22,23 +21,23 @@ export class SoundService {
 
     public loadSounds(){
         FS.readdir(this.RESOURCES_PATH, (err, files) => {
-            this.sounds = new Array<SoundData>();
+            this.sounds = new Array<Sound>();
             files.filter(file => file.match(this.FILE_PATTERN)).forEach(file => {
                 let jsonString = FS.readFileSync(this.RESOURCES_PATH+file,'utf8');
-                let dataList:SoundDataList = JSON.parse(jsonString);
+                let dataList:SoundList = JSON.parse(jsonString);
                 this.sounds = this.sounds.concat(dataList.sounds);
                 console.log("Loaded "+file+" data file");
             });
         });
     }
 
-    public getRandomSound(): SoundData {
+    public getRandomSound(): Sound {
         let randomIndex = Math.floor(Math.random() * this.sounds.length);
         return this.setSoundLocation(this.sounds[randomIndex]);
     }
 
-    public getSound(soundName: string): SoundData {
-        let matchSounds = this.sounds.filter((sound:any) => sound.tags.toLowerCase().includes(soundName.toLowerCase()));
+    public getSound(soundName: string): Sound {
+        let matchSounds = this.sounds.filter((sound:Sound) => sound.tags.toLowerCase().includes(soundName.toLowerCase()));
         if (matchSounds != null && matchSounds.length > 0) {
             if (matchSounds.length == 1) {
                 return this.setSoundLocation(matchSounds[0]);
@@ -51,11 +50,21 @@ export class SoundService {
         return null;
     }
 
-    public getSoundTextList():Array<SoundData>{
+    public getSoundByFileName(fileName: string): Sound {
+        let sound = this.sounds.find((sound:Sound) => sound.filename == fileName);
+        if (sound == null) {
+            console.log("Can´t get sound by filename: " + fileName);
+            return null;
+        }else{
+            return this.setSoundLocation(sound);
+        }
+    }
+
+    public getSounds():Array<Sound>{
         return this.sounds;
     }
 
-    private setSoundLocation(soundData:SoundData):SoundData{
+    private setSoundLocation(soundData:Sound):Sound{
         if(this.isURL(soundData.filename)) {
             soundData.location = soundData.filename;
         } else if(this.isFilename(soundData.filename)) {
@@ -78,7 +87,7 @@ export class SoundService {
         let promise = new Promise<boolean>((resolve, reject) => {
             let tempName = addSoundProcessData.getFileUrl().split("/");
             let fileName = tempName[tempName.length-1];
-            let sound:SoundData = {
+            let sound:Sound = {
                 filename: fileName,
                 text: addSoundProcessData.getText(),
                 tags: addSoundProcessData.getTags()
@@ -101,10 +110,10 @@ export class SoundService {
         return promise;
     }
 
-    private appendSoundToJSONFile(sound:SoundData) {
+    private appendSoundToJSONFile(sound:Sound) {
         if(FS.existsSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME)){
             let data = FS.readFileSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME,'utf8');
-            let soundDataList:SoundDataList = JSON.parse(data); 
+            let soundDataList:SoundList = JSON.parse(data); 
             soundDataList.sounds.push(sound)
             let json = JSON.stringify(soundDataList); 
             try{
@@ -114,7 +123,7 @@ export class SoundService {
                 throw err;
             }
         }else{
-            let soundDataList:SoundDataList = {
+            let soundDataList:SoundList = {
                 title: this.DEFAULT_DATA_FILE_TITLE,
                 sounds: [sound]
             }

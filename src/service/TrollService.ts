@@ -2,7 +2,7 @@ import { VoiceChannelService } from "./VoiceChannelService";
 import { VoiceChannel, Client, TextChannel } from "discord.js";
 import Schedule, { Job } from 'node-schedule';
 import { SoundService } from "./SoundService";
-import { ClientUtils } from "../util/ClientUtils";
+import { ClientUtils } from "../util";
 
 export class TrollService {
 
