@@ -42,13 +42,44 @@ Create a config.json in src/config/ with the following content:
 ```
 Replace BOT_TOKEN with the one you get from the Discord Developer Portal.
 
+### Set up Discord bot command symbol (Optional)
 Bot command symbol can be customized setting a new property "botSymbol" in the json file (In the following example it will set as symbol % instead of ?):
 ```json
 {
-    "token": "BOT_TOKEN",
+    ...
     "botSymbol": "%"
+    ...
 }
 ```
+
+### Enable bot webservices (Optional)
+If you want to enable bot webservice to be able to interact with the bot from other applications, add the following new properties in the config json file:
+```json
+{
+    ...
+    "wsenabled": true,
+    "tokenkey": "your-secret-key-for-auth-token",
+    "wsusers": [
+        {
+            "username": "user",
+            "password": "pass"
+        }
+    ]
+    ...
+}
+```
+Where wsusers will be the users able to access to the webservices
+#### Enable https webservices (Optional)
+To enable the access to the webservices through https you should also add the following properties:
+```json
+{
+    ...
+    "sslenabled": true,
+    "certkey": "your-cert-key"
+    ...
+}
+```
+And have placed your cert.pem and key.pem files in the project root path.
 
 ### Install node dependencies
 Install dependencies:
@@ -82,6 +113,12 @@ To run the docker container:
 ```shell
 docker run -d sound-discord-bot
 ```
+Append *-p 53134:53134* to *docker run* if running the webservices.
+#### Other build args accepted
+* wsenabled="true" in order to enable the bot webservices (Default false)
+* sslenabled="true" in order to enable https access to the bot webservices (Default false)
+* username="admin" to change the webservices username (Default admin)
+* password="soundbot" to change the webservices password (Default soundbot)
 
 ### Add bot to discord server
 Replace the {CLIENT_ID} in the url with the application client id from the Discord Developer Portal and open the url:
