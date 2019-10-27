@@ -20,7 +20,7 @@ export class Bot {
     private trollService:TrollService;
     private soundService:SoundService;
 
-    private addSoundProcessData:AddSoundProcessData
+    private addSoundProcessData:AddSoundProcessData;
 
     constructor () {
         this.client = new Discord.Client();
@@ -46,9 +46,9 @@ export class Bot {
     /**
      * Starts bot
      */
-    public start() {
+    public start(): Promise<string> {
         console.log("Login...");
-        this.client.login(config.token);
+        return this.client.login(config.token);
     }
 
     private onMessage(message: Message) {
@@ -259,8 +259,8 @@ export class Bot {
         if(this.addSoundProcessData.validateUserAndChannel(message)){
             if(message.content != null && message.content.length >= 3 && message.content.length <= 100){
                 this.addSoundProcessData.setTags(message.content);
-                this.soundService.addNewSound(this.addSoundProcessData).then((success) => {
-                    if(success){
+                this.soundService.addNewSound(this.addSoundProcessData).then((response) => {
+                    if(response.success){
                         this.clearAddSoundProcess();
                         message.channel.send("Sound imported successfuly");
                     }else{

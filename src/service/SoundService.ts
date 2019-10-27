@@ -1,7 +1,7 @@
 import Request from 'request';
 import FS from 'fs';
 import { SoundList, Sound } from '../interface';
-import { AddSoundProcessData } from '../models';
+import { AddSoundProcessData, AddSoundProcessResponse } from '../models';
 
 export class SoundService {
 
@@ -83,31 +83,70 @@ export class SoundService {
         return this.SOUND_FILENAME_PATTERN.test(filename);
     }
 
-    public addNewSound(addSoundProcessData:AddSoundProcessData):Promise<boolean> {
-        let promise = new Promise<boolean>((resolve, reject) => {
+    public addNewSound(addSoundProcessData:AddSoundProcessData):Promise<AddSoundProcessResponse> {
+        let promise = new Promise<AddSoundProcessResponse>((resolve, reject) => {
             let tempName = addSoundProcessData.getFileUrl().split("/");
             let fileName = tempName[tempName.length-1];
-            let sound:Sound = {
-                filename: fileName,
-                text: addSoundProcessData.getText(),
-                tags: addSoundProcessData.getTags()
-            }
-            console.log("Importing sound: "+JSON.stringify(sound));
-            Request.get(addSoundProcessData.getFileUrl()).on('error', (err) => {
-                console.error("Error getting file from "+addSoundProcessData.getFileUrl()+": "+err);
-                resolve(false);
-            }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on('finish',() => {
-                try{
-                    this.appendSoundToJSONFile(sound);
-                    console.log("Sound imported successfuly");
-                    resolve(true);
-                }catch(err){
-                    console.log("Error imported sound");
-                    resolve(false);
+            try{
+                if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
+                    console.log("Error importing sound: A file with this name already exists");
+                    let response = new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
+                    resolve(response);
+                }else{
+                    let sound:Sound = {
+                        filename: fileName,
+                        text: addSoundProcessData.getText(),
+                        tags: addSoundProcessData.getTags()
+                    }
+                    console.log("Importing sound: "+JSON.stringify(sound));
+                    Request.get(addSoundProcessData.getFileUrl()).on('error', (err) => {
+                        console.error("Error getting file from "+addSoundProcessData.getFileUrl()+": "+err);
+                        let response = new AddSoundProcessResponse(false, "Error getting file from "+addSoundProcessData.getFileUrl());
+                        resolve(response);
+                    }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on('finish',() => {
+                        try{
+                            this.appendSoundToJSONFile(sound);
+                            console.log("Sound imported successfuly");
+                            let response = new AddSoundProcessResponse(true, null);
+                            resolve(response);
+                        }catch(err){
+                            console.error("Error importing sound");
+                            let response = new AddSoundProcessResponse(false, "Error importing sound");
+                            resolve(response);
+                        }
+                    }));
                 }
-            }));
+            }catch(err){
+                console.error("Error importing sound");
+                let response = new AddSoundProcessResponse(false, "Error importing sound");
+                resolve(response);
+            } 
         });
         return promise;
+    }
+
+    public addNewSoundFile(text:string, tags:string, file:any):AddSoundProcessResponse {
+            let fileName = file.originalname;
+            try{
+                if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
+                    console.log("Error importing sound: A file with this name already exists");
+                    return new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
+                }else{
+                    let sound:Sound = {
+                        filename: fileName,
+                        text: text,
+                        tags: tags
+                    }
+                    console.log("Importing sound: "+JSON.stringify(sound));
+                    FS.renameSync(file.path, this.SOUNDS_PATH+fileName);
+                    this.appendSoundToJSONFile(sound);
+                    console.log("Sound imported successfuly");
+                    return new AddSoundProcessResponse(true, null);
+                }
+            }catch(err){
+                console.error("Error importing sound");
+                return new AddSoundProcessResponse(false, "Error importing sound");
+            } 
     }
 
     private appendSoundToJSONFile(sound:Sound) {

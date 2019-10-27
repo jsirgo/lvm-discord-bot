@@ -1,4 +1,4 @@
-import express, { Express } from "express";
+import express, { Express, Router } from "express";
 import * as bodyParser from 'body-parser';
 import * as jwt from 'jsonwebtoken';
 import config from './config/config.json';
@@ -9,13 +9,17 @@ import { Sound, Config } from "./interface";
 import { Guild, Role as DiscordRole, VoiceChannel, GuildMember } from "discord.js";
 import FS from 'fs';
 import https from 'https';
+import cors from 'cors';
+import multer, { StorageEngine, Instance } from 'multer';
 
 export class ExpressApp {
 
     private readonly PORT:number = 53134;
     
     private app: Express;
-    private privateRoutes = express.Router(); 
+    private privateRoutes: Router;
+    private storage:StorageEngine;
+    private upload:Instance;
 
     constructor (private bot: Bot) {}
 
@@ -33,9 +37,32 @@ export class ExpressApp {
             return;
         }
         this.app = express();
+        this.privateRoutes = express.Router();
+
+        this.storage = multer.diskStorage({
+            destination: function (req, file, cb) {
+                var dest = 'public/attachments/';
+                if (!FS.existsSync(dest)){
+                    FS.mkdirSync(dest, { recursive: true });
+                }
+                cb(null, dest);
+            },
+            filename: function (req, file, cb) {
+                cb(null, Date.now() + file.originalname);
+            }
+        });
+        this.upload = multer({ storage: this.storage });
+
         this.app.set('key', (<Config>config).tokenkey);
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.use(bodyParser.json());
+        this.app.use(cors({
+            'allowedHeaders': ['Content-Type', 'access-token'],
+            'origin': '*',
+            'preflightContinue': true
+        }));
+        this.app.use(express.static('public'));
+        
         this.privateRoutes.use((req:any, res, next) => {
             let token:string = <string>req.headers['access-token'];
             if (token) {
@@ -88,14 +115,34 @@ export class ExpressApp {
         });
 
         this.app.post('/play-sound', this.privateRoutes, (req, res) => {
-            if(req.body.fileName != null && req.body.fileName.length > 0 && req.body.channelId != null && req.body.fileName.length > 0) {
+            if(req.body.fileName != null && req.body.fileName.length > 0 && req.body.channelId != null && req.body.channelId.length > 0) {
                 if(this.bot.playSoundInChannel(req.body.fileName, req.body.channelId)){
-                    res.json({ mensaje: "Sound played successfuly"})
+                    res.json({ mensaje: "Sound played successfuly"});
                 }else{
                     res.status(500).send({ error: "Error playing sound" });
                 }
             }else{
                 res.status(400).send({ error: "Error playing sound" });
+            }
+        });
+
+        this.app.post('/add-sound', this.privateRoutes, this.upload.single('file'), (req, res) => {
+            if(req.body.text != null && req.body.text.length > 0 
+                && req.body.tags != null && req.body.tags.length > 0
+                && req.file != null) {
+                let response = this.bot.getSoundService().addNewSoundFile(req.body.text, req.body.tags, req.file);
+                if(response.success){
+                    res.json({ mensaje: "Sound added successfuly"});
+                }else{
+                    try {
+                        FS.unlinkSync(req.file.path);
+                    } catch(err) {
+                        console.error("Error deleting attachment file: " + req.file.path);
+                    }
+                    res.status(500).send({ error: "Error adding sound" });
+                }
+            }else{
+                res.status(400).send({ error: "Error adding sound" });
             }
         });
 

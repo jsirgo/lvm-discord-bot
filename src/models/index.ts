@@ -1,4 +1,5 @@
 export * from './AddSoundProcessData';
+export * from './AddSoundProcessResponse';
 export * from './BotData';
 export * from './Channel';
 export * from './Guild';

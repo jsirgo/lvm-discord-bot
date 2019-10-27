@@ -3,11 +3,13 @@ import config from './config/config.json'
 import { ExpressApp } from './ExpressApp';
 import { Config } from './interface';
 
-const bot: Bot = new Bot();
-bot.start();
+var bot: Bot = new Bot();
+var expressApp: ExpressApp;
 
-if((<Config>config).wsenabled != null && (<Config>config).wsenabled){
-    console.log("WS enabled");
-    const expressApp: ExpressApp = new ExpressApp(bot);
-    expressApp.start();
-}
+bot.start().then((val) => {
+    if((<Config>config).wsenabled != null && (<Config>config).wsenabled){
+        console.log("WS enabled, starting express app");
+        expressApp = new ExpressApp(bot);
+        expressApp.start();
+    }
+});
