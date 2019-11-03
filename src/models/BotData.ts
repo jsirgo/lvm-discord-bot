@@ -4,7 +4,6 @@ import { Channel } from './Channel';
 
 export class BotData {
     guild: Guild;
-    serverName: string;
     voiceChannels: Channel[];
     sounds: Sound[];
 }

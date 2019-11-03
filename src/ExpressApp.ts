@@ -4,9 +4,9 @@ import * as jwt from 'jsonwebtoken';
 import config from './config/config.json';
 import { Bot } from "./Bot";
 import { VerifyErrors } from "jsonwebtoken";
-import { BotData, Channel, Member, Role } from "./models";
+import { BotData, Channel, Member, Role, Guild } from "./models";
 import { Sound, Config } from "./interface";
-import { Guild, Role as DiscordRole, VoiceChannel, GuildMember } from "discord.js";
+import { Guild as DiscordGuild, Role as DiscordRole, VoiceChannel, GuildMember } from "discord.js";
 import FS from 'fs';
 import https from 'https';
 import cors from 'cors';
@@ -99,12 +99,15 @@ export class ExpressApp {
         
         this.app.get('/bot', this.privateRoutes, (req, res) => {
             let sounds:Sound[] = this.bot.getSoundService().getSounds();
-            let guilds:Guild[] = this.bot.getBotGuilds();
+            let guilds:DiscordGuild[] = this.bot.getBotGuilds();
             if(sounds != null && guilds != null){
                 let botData = new BotData();
+                 // At the moment expecting only one guild
+                 let guild = guilds[0];
+                botData.guild = this.discordGuild2Guild(guild);
                 botData.sounds = sounds;
-                // At the moment expecting only one guild
-                let voiceChannels:Channel[] = guilds[0].channels.filter(channel => channel.type == 'voice')
+               
+                let voiceChannels:Channel[] = guild.channels.filter(channel => channel.type == 'voice')
                     .map(channel => this.voiceChannel2Channel(<VoiceChannel>channel));
                 botData.voiceChannels = voiceChannels;
                 res.json(botData);
@@ -178,7 +181,7 @@ export class ExpressApp {
         let member = new Member();
         member.id = guildMember.id;
         member.joinedAt = guildMember.joinedAt;
-        member.nickname = guildMember.nickname;
+        member.username = guildMember.user.username;
         member.roles = guildMember.roles.map(role => this.discordRole2Role(role));
         return member;
     }
@@ -188,5 +191,15 @@ export class ExpressApp {
         role.id = discordRole.id;
         role.name = discordRole.name;
         return role;
+    }
+
+    private discordGuild2Guild(discordGuild:DiscordGuild): Guild{
+        let guild = new Guild();
+        guild.id = discordGuild.id;
+        guild.name = discordGuild.name;
+        guild.ownerID= discordGuild.ownerID;
+        guild.description= discordGuild.description;
+        guild.banner= discordGuild.banner;
+        return guild;
     }
 }
