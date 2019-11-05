@@ -29,7 +29,7 @@ export class Bot {
 
         this.client.on("message", (message: Message) => this.onMessage(message));
 
-        this.client.on("error", (error) => console.log("Error: "+error));
+        this.client.on("error", (error) => console.error("Error: "+error));
 
         this.client.on('disconnect', function () {
             clearTimeout(this.client.ws.connection.ratelimit.resetTimer);

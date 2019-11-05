@@ -130,19 +130,17 @@ export class ExpressApp {
         });
 
         this.app.post('/add-sound', this.privateRoutes, this.upload.single('file'), (req, res) => {
-            if(req.body.text != null && req.body.text.length > 0 
-                && req.body.tags != null && req.body.tags.length > 0
-                && req.file != null) {
+            if(this.isValidAddSoundRequest(req)) {
                 let response = this.bot.getSoundService().addNewSoundFile(req.body.text, req.body.tags, req.file);
                 if(response.success){
                     res.json({ mensaje: "Sound added successfuly"});
                 }else{
-                    try {
-                        FS.unlinkSync(req.file.path);
-                    } catch(err) {
-                        console.error("Error deleting attachment file: " + req.file.path);
-                    }
                     res.status(500).send({ error: "Error adding sound" });
+                }
+                try {
+                    FS.unlinkSync(req.file.path);
+                } catch(err) {
+                    console.error("Error deleting attachment file: " + req.file.path);
                 }
             }else{
                 res.status(400).send({ error: "Error adding sound" });
@@ -162,6 +160,12 @@ export class ExpressApp {
                 console.log('HTTP Server running on port ' + this.PORT);
             });
         }
+    }
+
+    private isValidAddSoundRequest(req:any): boolean{
+        return req.body.text != null && req.body.text.length > 0 
+        && req.body.tags != null && req.body.tags.length > 0
+        && req.file != null;
     }
 
     private validateUser(username: string, password: string): boolean {

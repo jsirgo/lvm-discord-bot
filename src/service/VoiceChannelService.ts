@@ -36,7 +36,7 @@ export class VoiceChannelService {
             }).on('error', (error) => {
                 this.isBussy = false;
                 ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
-                console.log("Error: "+error);
+                console.error("Error: "+error);
             });
         });
     }
