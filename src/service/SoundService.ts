@@ -110,14 +110,14 @@ export class SoundService {
                             let response = new AddSoundProcessResponse(true, null);
                             resolve(response);
                         }catch(err){
-                            console.error("Error importing sound");
+                            console.error("Error importing sound" + JSON.stringify(err));
                             let response = new AddSoundProcessResponse(false, "Error importing sound");
                             resolve(response);
                         }
                     }));
                 }
             }catch(err){
-                console.error("Error importing sound");
+                console.error("Error importing sound" + JSON.stringify(err));
                 let response = new AddSoundProcessResponse(false, "Error importing sound");
                 resolve(response);
             } 
@@ -144,7 +144,7 @@ export class SoundService {
                     return new AddSoundProcessResponse(true, null);
                 }
             }catch(err){
-                console.error("Error importing sound");
+                console.error("Error importing sound" + JSON.stringify(err));
                 return new AddSoundProcessResponse(false, "Error importing sound");
             } 
     }
