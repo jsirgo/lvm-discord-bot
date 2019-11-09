@@ -1,12 +1,12 @@
 #!/bin/sh
 
-if [ ! -f "./src/config/config.jlson" ]
+if [ ! -f "./src/config/config.json" ]
 then
     echo "Creating config file"
     mkdir -p src/config && echo "{\"token\":\""${TOKEN}"\",\"botSymbol\":\""${SYMBOL}"\",\"wsenabled\":"${WSENABLED}",\"sslenabled\":"${SSLENABLED}",\"tokenkey\":\""${WS_PASSWORD}"\",\"certkey\": \""${CERT_PASSWORD}"\"}" > src/config/config.json
 fi
 
-if [ ! -f "./src/config/wsusers.jlson" ]
+if [ ! -f "./src/config/wsusers.json" ]
 then
     echo "Creating users file"
     mkdir -p src/config && echo "{\"users\": [{\"username\": \""${USERNAME}"\",\"password\": \""${PASSWORD}"\",\"role\": \"ADMIN\"}]}" > src/config/wsusers.json
