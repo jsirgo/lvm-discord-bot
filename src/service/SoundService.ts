@@ -15,6 +15,8 @@ export class SoundService {
 
     private sounds:Array<Sound>;
 
+    private addSoundBussy:boolean = false;
+
     constructor(){
         this.loadSounds();
     }
@@ -85,50 +87,67 @@ export class SoundService {
 
     public addNewSound(addSoundProcessData:AddSoundProcessData):Promise<AddSoundProcessResponse> {
         let promise = new Promise<AddSoundProcessResponse>((resolve, reject) => {
-            let tempName = addSoundProcessData.getFileUrl().split("/");
-            let fileName = tempName[tempName.length-1];
-            try{
-                if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
-                    console.error("Error importing sound: A file with this name already exists");
-                    let response = new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
-                    resolve(response);
-                }else{
-                    let sound:Sound = {
-                        filename: fileName,
-                        text: addSoundProcessData.getText(),
-                        tags: addSoundProcessData.getTags()
-                    }
-                    console.log("Importing sound: "+JSON.stringify(sound));
-                    Request.get(addSoundProcessData.getFileUrl()).on('error', (err) => {
-                        console.error("Error getting file from "+addSoundProcessData.getFileUrl()+": "+err);
-                        let response = new AddSoundProcessResponse(false, "Error getting file from "+addSoundProcessData.getFileUrl());
+            if(this.addSoundBussy){
+                console.error("Error importing sound: Other add sound sound request is being processed");
+                resolve(new AddSoundProcessResponse(false, "Error importing sound: Other add sound sound request is being processed, retry later."));
+            }else{
+                this.addSoundBussy = true;
+                let tempName = addSoundProcessData.getFileUrl().split("/");
+                let fileName = tempName[tempName.length-1];
+                try{
+                    if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
+                        this.addSoundBussy = false;
+                        console.error("Error importing sound: A file with this name already exists");
+                        let response = new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
                         resolve(response);
-                    }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on('finish',() => {
-                        try{
-                            this.appendSoundToJSONFile(sound);
-                            console.log("Sound imported successfuly");
-                            let response = new AddSoundProcessResponse(true, null);
-                            resolve(response);
-                        }catch(err){
-                            console.error("Error importing sound" + JSON.stringify(err));
-                            let response = new AddSoundProcessResponse(false, "Error importing sound");
-                            resolve(response);
+                    }else{
+                        let sound:Sound = {
+                            filename: fileName,
+                            text: addSoundProcessData.getText(),
+                            tags: addSoundProcessData.getTags()
                         }
-                    }));
+                        console.log("Importing sound: "+JSON.stringify(sound));
+                        Request.get(addSoundProcessData.getFileUrl()).on('error', (err) => {
+                            this.addSoundBussy = false;
+                            console.error("Error getting file from "+addSoundProcessData.getFileUrl()+": "+err);
+                            let response = new AddSoundProcessResponse(false, "Error getting file from "+addSoundProcessData.getFileUrl());
+                            resolve(response);
+                        }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on('finish',() => {
+                            try{
+                                this.appendSoundToJSONFile(sound);
+                                this.addSoundBussy = false;
+                                console.log("Sound imported successfuly");
+                                let response = new AddSoundProcessResponse(true, null);
+                                resolve(response);
+                            }catch(err){
+                                this.addSoundBussy = false;
+                                console.error("Error importing sound" + JSON.stringify(err));
+                                let response = new AddSoundProcessResponse(false, "Error importing sound");
+                                resolve(response);
+                            }
+                        }));
+                    }
+                }catch(err){
+                    this.addSoundBussy = false;
+                    console.error("Error importing sound" + JSON.stringify(err));
+                    let response = new AddSoundProcessResponse(false, "Error importing sound");
+                    resolve(response);
                 }
-            }catch(err){
-                console.error("Error importing sound" + JSON.stringify(err));
-                let response = new AddSoundProcessResponse(false, "Error importing sound");
-                resolve(response);
             } 
         });
         return promise;
     }
 
     public addNewSoundFile(text:string, tags:string, file:any):AddSoundProcessResponse {
-        let fileName = file.originalname;
+        if(this.addSoundBussy){
+            console.error("Error importing sound: Other add sound sound request is being processed");
+            return new AddSoundProcessResponse(false, "Error importing sound: Other add sound sound request is being processed, retry later.");
+        }
+        this.addSoundBussy = true;
         try{
+            let fileName = file.originalname;
             if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
+                this.addSoundBussy = false;
                 console.error("Error importing sound: A file with this name already exists");
                 return new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
             }else{
@@ -141,10 +160,14 @@ export class SoundService {
                 this.copyFile(file.path, this.SOUNDS_PATH+fileName);
 
                 this.appendSoundToJSONFile(sound);
+
+                this.addSoundBussy = false;
+
                 console.log("Sound imported successfuly");
                 return new AddSoundProcessResponse(true, null);
             }
         }catch(err){
+            this.addSoundBussy = false;
             console.error("Error importing sound" + JSON.stringify(err));
             return new AddSoundProcessResponse(false, "Error importing sound");
         } 

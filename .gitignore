@@ -4,8 +4,7 @@ dist/
 output.log
 resources/*
 !resources/README.md
-src/config/config.json
-src/config/data.json
+src/config/
 cert.pem
 key.pem
 public/

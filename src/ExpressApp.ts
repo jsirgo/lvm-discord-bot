@@ -2,10 +2,11 @@ import express, { Express, Router } from "express";
 import * as bodyParser from 'body-parser';
 import * as jwt from 'jsonwebtoken';
 import config from './config/config.json';
+import userconfig from './config/wsusers.json';
 import { Bot } from "./Bot";
 import { VerifyErrors } from "jsonwebtoken";
-import { BotData, Channel, Member, Role, Guild } from "./models";
-import { Sound, Config } from "./interface";
+import { BotData, Channel, Member, Role, Guild, User } from "./models";
+import { Sound, Config, UsersConfig } from "./interface";
 import { Guild as DiscordGuild, Role as DiscordRole, VoiceChannel, GuildMember } from "discord.js";
 import FS from 'fs';
 import https from 'https';
@@ -20,8 +21,11 @@ export class ExpressApp {
     private privateRoutes: Router;
     private storage:StorageEngine;
     private upload:Instance;
+    private users:User[];
 
-    constructor (private bot: Bot) {}
+    constructor (private bot: Bot) {
+        this.users = userconfig.users;
+    }
 
     public start() {
         if((<Config>config).tokenkey == null || (<Config>config).tokenkey.length <= 0){
@@ -32,7 +36,7 @@ export class ExpressApp {
             console.error("Error starting WS: Cert key must be set in config.json");
             return;
         }
-        if((<Config>config).wsusers == null || (<Config>config).wsusers.length <= 0){
+        if(this.users == null || this.users.length <= 0){
             console.error("Error starting WS: At least one user must be set in config.json");
             return;
         }
@@ -65,6 +69,9 @@ export class ExpressApp {
         
         this.privateRoutes.use((req:any, res, next) => {
             let token:string = <string>req.headers['access-token'];
+            if(!token && req.query && req.query.kt){
+                token = req.query.kt;
+            }
             if (token) {
                 jwt.verify(token, this.app.get('key'), (err:VerifyErrors, decoded:string) => {      
                     if (err) {
@@ -79,13 +86,13 @@ export class ExpressApp {
             }
         });
 
-        this.app.post('/users/authenticate', (req, res) => {
+        this.app.post('/user/authenticate', (req, res) => {
             if(this.validateUser(req.body.username, req.body.password)) {
                 const payload = {
                     check:  true
                 };
                 const token = jwt.sign(payload, this.app.get('key'), {
-                    expiresIn: 1440
+                    expiresIn: 86400
                 });
                 res.json({
                     mensaje: 'Succesful authentication',
@@ -117,7 +124,7 @@ export class ExpressApp {
             
         });
 
-        this.app.post('/play-sound', this.privateRoutes, (req, res) => {
+        this.app.post('/sound/play', this.privateRoutes, (req, res) => {
             if(req.body.fileName != null && req.body.fileName.length > 0 && req.body.channelId != null && req.body.channelId.length > 0) {
                 if(this.bot.playSoundInChannel(req.body.fileName, req.body.channelId)){
                     res.json({ mensaje: "Sound played successfuly"});
@@ -129,7 +136,7 @@ export class ExpressApp {
             }
         });
 
-        this.app.post('/add-sound', this.privateRoutes, this.upload.single('file'), (req, res) => {
+        this.app.post('/sound/add', this.privateRoutes, this.upload.single('file'), (req, res) => {
             if(this.isValidAddSoundRequest(req)) {
                 let response = this.bot.getSoundService().addNewSoundFile(req.body.text, req.body.tags, req.file);
                 if(response.success){
@@ -146,6 +153,11 @@ export class ExpressApp {
                 res.status(400).send({ error: "Error adding sound" });
             }
         });
+
+        this.app.get('/sound/:filename', this.privateRoutes, (req, res) => {
+            let filename = req.params.filename;
+            res.download('./resources/sounds/' + filename);
+        })
 
         if((<Config>config).sslenabled != null && (<Config>config).sslenabled){
             https.createServer({
@@ -169,7 +181,7 @@ export class ExpressApp {
     }
 
     private validateUser(username: string, password: string): boolean {
-        return (<Config>config).wsusers.findIndex(user => user.username === username && user.password === password) >= 0;
+        return this.users.findIndex(user => user.username === username && user.password === password) >= 0;
     }
 
     private voiceChannel2Channel(voiceChannel: VoiceChannel): Channel{
