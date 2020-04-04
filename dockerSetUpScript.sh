@@ -2,18 +2,18 @@
 
 if [ ! -f "./src/config/config.json" ]
 then
-    echo "Creating config file"
-    mkdir -p src/config && echo "{\"token\":\""${TOKEN}"\",\"botSymbol\":\""${SYMBOL}"\",\"wsenabled\":"${WSENABLED}",\"sslenabled\":"${SSLENABLED}",\"tokenkey\":\""${WS_PASSWORD}"\",\"certkey\": \""${CERT_PASSWORD}"\"}" > src/config/config.json
+    echo "Create config file"
+    mkdir -p src/config && echo "{\"token\":\""$2"\",\"botSymbol\":\""$1"\",\"apienabled\":"$3",\"sslenabled\":"$7",\"tokenkey\":\""$4"\",\"mantaineremail\": \""$8"\"}" > src/config/config.json
 fi
 
-if [ ! -f "./src/config/wsusers.json" ]
+if [ ! -f "./src/config/apiusers.json" ]
 then
-    echo "Creating users file"
-    mkdir -p src/config && echo "{\"users\": [{\"username\": \""${USERNAME}"\",\"password\": \""${PASSWORD}"\",\"role\": \"ADMIN\"}]}" > src/config/wsusers.json
+    echo "Create users file"
+    mkdir -p src/config && echo "{\"users\": [{\"username\": \""$5"\",\"password\": \""$6"\"}]}" > src/config/apiusers.json
 fi
 
-if [ "$WSENABLED" = 'true' ] && [ ! -f "./key.pem" ] && [ ! -f "./cert.pem" ]
+if [ ! -f "./greenlock.d/config.json" ]
 then
-    echo "Creating certs"
-    openssl req -x509 -passout env:CERT_PASSWORD -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj "/C=ES/ST=./L=./O=./OU=./CN=."
+    echo "Create greenlock config file"
+    mkdir -p greenlock.d && echo "{\"sites\": [{\"subject\": \""$9"\", \"altnames\": [\""$9"\"]}]}" > greenlock.d/config.json
 fi

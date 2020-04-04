@@ -2,3 +2,7 @@ node_modules/
 package-lock.json
 dist/
 output.log
+*.md
+.greenlockrc
+greenlock.d/
+.travis.yml

@@ -1,5 +1,5 @@
 import Discord, { Message, TextChannel, Guild, VoiceChannel } from "discord.js";
-import config from './config/config.json';
+import config from '../config/config.json';
 import { VoiceChannelService } from "./service/VoiceChannelService";
 import { TrollService, SoundService } from "./service";
 import { AddSoundProcessData } from "./models";
@@ -293,7 +293,7 @@ export class Bot {
 
     public getBotGuilds(): Guild[]{
         if(this.client != null){
-            return this.client.guilds.array();
+            return this.client.guilds.cache.array();
         }
         return null;
     }
@@ -301,7 +301,7 @@ export class Bot {
     public playSoundInChannel(fileName: string, channelId: string): boolean{
         if(this.voiceChannelService.isNotBussy()){
             // At the moment expecting only one guild
-            let voiceChannels = this.client.guilds.first().channels.filter(channel => channel.type == 'voice' && channel.id == channelId);
+            let voiceChannels = this.client.guilds.cache.first().channels.cache.filter(channel => channel.type == 'voice' && channel.id == channelId);
             let sound = this.soundService.getSoundByFileName(fileName);
             if(voiceChannels.size == 1 && sound != null){
                 this.voiceChannelService.joinVoiceChannelAndPlaySound(sound, <VoiceChannel>voiceChannels.first()); 

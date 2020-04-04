@@ -63,14 +63,14 @@ export class TrollService {
 
     private getTrollChannels(channelMode:string):VoiceChannel[]{
         if(channelMode == this.TROLL_MODE_ALL){
-            return this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0).map(channel => <VoiceChannel>channel);
+            return this.client.channels.cache.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0).map(channel => <VoiceChannel>channel);
         }else if(channelMode == this.TROLL_MODE_RANDOM){
-            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0);
+            let channels = this.client.channels.cache.filter(channel => channel instanceof VoiceChannel && channel.members.size > 0);
             if(channels != null && channels.size > 0){
                 return [<VoiceChannel>channels.random()];
             }
         }else{
-            let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelMode.toLowerCase()) && channel.members.size > 0);
+            let channels = this.client.channels.cache.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelMode.toLowerCase()) && channel.members.size > 0);
             return channels.map(channel => <VoiceChannel>channel);
         }
         return null;

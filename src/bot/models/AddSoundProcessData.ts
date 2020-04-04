@@ -1,11 +1,11 @@
-import { GuildMember, TextChannel, Message, DMChannel } from "discord.js";
+import { GuildMember, TextChannel, Message, DMChannel, NewsChannel } from "discord.js";
 import { throws } from "assert";
 
 export class AddSoundProcessData {
 
     private step:number;
     private user:GuildMember;
-    private channel:TextChannel | DMChannel;
+    private channel:TextChannel | DMChannel | NewsChannel;
     private fileUrl:string;
     private text:string;
     private tags:string;
@@ -23,7 +23,7 @@ export class AddSoundProcessData {
         this.user = user;
     }
 
-    public setChannel(channel:TextChannel | DMChannel){
+    public setChannel(channel:TextChannel | DMChannel | NewsChannel){
         this.channel = channel;
     }
 

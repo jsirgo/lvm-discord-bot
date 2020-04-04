@@ -1,8 +1,8 @@
 export interface Config {
     token:string,
     botSymbol?:string,
-    wsenabled?:boolean,
+    apienabled?:boolean,
     sslenabled?:false,
     tokenkey?:string,
-    certkey?:string
+    mantaineremail?:string
 }

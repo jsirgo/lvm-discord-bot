@@ -26,8 +26,8 @@ export class VoiceChannelService {
         return voiceChannel.join().then(connection => {
             this.isBussy = true;
             let previousStatus = this.client.user.presence.status;
-            let previousActivityName = this.client.user.presence.activity != null ? this.client.user.presence.activity.name : null;
-            let PreviousActivityType = this.client.user.presence.activity != null ? this.client.user.presence.activity.type : null;
+            let previousActivityName = this.client.user.presence.activities[0] != null ? this.client.user.presence.activities[0].name : null;
+            let PreviousActivityType = this.client.user.presence.activities[0] != null ? this.client.user.presence.activities[0].type : null;
             ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_IDLE, sound.text + " in " + voiceChannel.name, ClientUtils.CLIENT_ACTIVITY_TYPE_STREAMING);
             return connection.play(sound.location).on('end', () => {
                 this.isBussy = false;
@@ -46,7 +46,7 @@ export class VoiceChannelService {
     }
 
     public getVoiceChannel(channelName:string):VoiceChannel {
-        let channels = this.client.channels.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelName.toLowerCase()));
+        let channels = this.client.channels.cache.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelName.toLowerCase()));
         if(channels.size === 1){
             return <VoiceChannel>channels.first();
         }else{

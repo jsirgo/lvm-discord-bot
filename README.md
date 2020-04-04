@@ -52,14 +52,14 @@ Bot command symbol can be customized setting a new property "botSymbol" in the j
 }
 ```
 
-### Enable bot webservices (Optional)
-If you want to enable bot webservice to be able to interact with the bot from other applications, add the following new properties in the config json file:
+### Enable bot api (Optional)
+If you want to enable bot api, add the following new properties in the config json file:
 ```json
 {
     ...
-    "wsenabled": true,
+    "apienabled": true,
     "tokenkey": "your-secret-key-for-auth-token",
-    "wsusers": [
+    "apiusers": [
         {
             "username": "user",
             "password": "pass"
@@ -68,18 +68,24 @@ If you want to enable bot webservice to be able to interact with the bot from ot
     ...
 }
 ```
-Where wsusers will be the users able to access to the webservices
-#### Enable https webservices (Optional)
-To enable the access to the webservices through https you should also add the following properties:
+Where 'apiusers' will be the users able to access to the api
+
+#### Enable https on api (Optional)
+To enable access to the api through https you should also add the following properties:
 ```json
 {
     ...
     "sslenabled": true,
-    "certkey": "your-cert-key"
+    "mantaineremail": "example@email.com"
     ...
 }
 ```
-And have placed your cert.pem and key.pem files in the project root path.
+
+*Extra config is needed to enable ssl --> [README.md](greenlock.d/README.md)*
+
+SSL certificates will be generated with Let's Encrypt using [greenlock-express](https://git.rootprojects.org/root/greenlock-express.js) **Note that to generate certificates some data might be shared with third parties, read greenlock-express doc and [Let’s Encrypt](https://letsencrypt.org/es/) for more info.**
+ACME Subscriber Agreement: https://letsencrypt.org/documents/LE-SA-v1.2-November-15-2017.pdf
+Greenlock/ACME.js Terms of Use: https://rootprojects.org/legal/#terms
 
 ### Install node dependencies
 Install dependencies:
@@ -100,7 +106,7 @@ npm start
 ## Docker
 Before building the image is needed to do the steps described in **"Bot set up and needed steps"**
 
-### Run docker container
+### Build docker container
 To build the image (Replace BOT_TOKEN with the one you get from the Discord Developer Portal):
 ```shell
 docker build --build-arg token=BOT_TOKEN -t sound-discord-bot .
@@ -109,17 +115,30 @@ Bot command symbol can be customized passing symbol build arg (In the following 
 ```shell
 docker build --build-arg token=BOT_TOKEN --build-arg symbol=% -t sound-discord-bot .
 ```
+#### Optional build args
+* apienabled="true" in order to enable the bot api (Default false)
+* sslenabled="true" in order to enable https access to the bot api (Default false)
+* username="admin" to change the api user (Default admin)
+* password="soundbot" to change the api password (Default soundbot)
+* domain="example.com" The domain where the api will be available (Only required if ssl enabled)
+* mantaineremail="example@email.com" Mantainer email required by greenlock-express (Only required if ssl enabled)
+
+### Run docker container
 To run the docker container:
 ```shell
 docker run -d sound-discord-bot
 ```
-Append *-p 53134:53134* to *docker run* if running the webservices.
-#### Other build args accepted
-* wsenabled="true" in order to enable the bot webservices (Default false)
-* sslenabled="true" in order to enable https access to the bot webservices (Default false)
-* username="admin" to change the webservices username (Default admin)
-* password="soundbot" to change the webservices password (Default soundbot)
+Append *-p 53134:53134* to *docker run* if running the api, or *-p 443:443* in case of running it with ssl.
 
 ### Add bot to discord server
 Replace the {CLIENT_ID} in the url with the application client id from the Discord Developer Portal and open the url:
 https://discordapp.com/oauth2/authorize?client_id={CLIENT_ID}&scope=bot&permissions=6144
+
+## API
+API can be accesible through 53134 port or 443 in case ssl is enabled
+Available endpoints:
+* /user/authenticate
+* /bot
+* /sound/play
+* /sound/add
+* /sound/:filename

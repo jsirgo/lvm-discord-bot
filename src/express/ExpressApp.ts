@@ -1,17 +1,18 @@
 import express, { Express, Router } from "express";
 import * as bodyParser from 'body-parser';
 import * as jwt from 'jsonwebtoken';
-import config from './config/config.json';
-import userconfig from './config/wsusers.json';
-import { Bot } from "./Bot";
+import config from '../config/config.json';
+import userconfig from '../config/apiusers.json';
+import { Bot } from "../bot/Bot";
 import { VerifyErrors } from "jsonwebtoken";
-import { BotData, Channel, Member, Role, Guild, User } from "./models";
-import { Sound, Config, UsersConfig } from "./interface";
+import { BotData, Channel, Member, Role, Guild, User } from "../bot/models";
+import { Sound, Config } from "../bot/interface";
 import { Guild as DiscordGuild, Role as DiscordRole, VoiceChannel, GuildMember } from "discord.js";
 import FS from 'fs';
-import https from 'https';
 import cors from 'cors';
-import multer, { StorageEngine, Instance } from 'multer';
+import multer, { StorageEngine } from 'multer';
+
+const greenlock = require('greenlock-express');
 
 export class ExpressApp {
 
@@ -20,26 +21,12 @@ export class ExpressApp {
     private app: Express;
     private privateRoutes: Router;
     private storage:StorageEngine;
-    private upload:Instance;
+    private upload:any;
     private users:User[];
 
     constructor (private bot: Bot) {
         this.users = userconfig.users;
-    }
 
-    public start() {
-        if((<Config>config).tokenkey == null || (<Config>config).tokenkey.length <= 0){
-            console.error("Error starting WS: Token key must be set in config.json");
-            return;
-        }
-        if((<Config>config).certkey == null || (<Config>config).certkey.length <= 0){
-            console.error("Error starting WS: Cert key must be set in config.json");
-            return;
-        }
-        if(this.users == null || this.users.length <= 0){
-            console.error("Error starting WS: At least one user must be set in config.json");
-            return;
-        }
         this.app = express();
         this.privateRoutes = express.Router();
 
@@ -73,7 +60,7 @@ export class ExpressApp {
                 token = req.query.kt;
             }
             if (token) {
-                jwt.verify(token, this.app.get('key'), (err:VerifyErrors, decoded:string) => {      
+                jwt.verify(token, this.app.get('key'), (err: VerifyErrors, decoded: object) => {      
                     if (err) {
                         return res.status(401).send({ error: "Invalid Token" });
                     } else {
@@ -86,6 +73,39 @@ export class ExpressApp {
             }
         });
 
+        this.setUpEndpoints();
+    }
+
+    public start() {
+
+        if((<Config>config).tokenkey == null || (<Config>config).tokenkey.length <= 0){
+            console.error("Error starting WS: Token key must be set in config.json");
+            return;
+        }
+        if((<Config>config).mantaineremail == null || (<Config>config).mantaineremail.length <= 0){
+            console.error("Error starting WS: Mantainer email must be set in config.json");
+            return;
+        }
+        if(this.users == null || this.users.length <= 0){
+            console.error("Error starting WS: At least one user must be set in config.json");
+            return;
+        }
+        
+        if((<Config>config).sslenabled != null && (<Config>config).sslenabled){
+            greenlock.init({
+                packageRoot: `${__dirname}/../../`,
+                configDir: "./greenlock.d",
+                maintainerEmail: (<Config>config).mantaineremail,
+                cluster: false
+            }).serve(this.app);
+        }else{
+            this.app.listen(this.PORT, () => {
+                console.log('HTTP Server running on port ' + this.PORT);
+            });
+        }
+    }
+
+    private setUpEndpoints(){
         this.app.post('/user/authenticate', (req, res) => {
             if(this.validateUser(req.body.username, req.body.password)) {
                 const payload = {
@@ -103,7 +123,7 @@ export class ExpressApp {
                 res.status(401).send({ error: "Wrong username or password" });
             }
         });
-        
+
         this.app.get('/bot', this.privateRoutes, (req, res) => {
             let sounds:Sound[] = this.bot.getSoundService().getSounds();
             let guilds:DiscordGuild[] = this.bot.getBotGuilds();
@@ -114,7 +134,7 @@ export class ExpressApp {
                 botData.guild = this.discordGuild2Guild(guild);
                 botData.sounds = sounds;
                
-                let voiceChannels:Channel[] = guild.channels.filter(channel => channel.type == 'voice')
+                let voiceChannels:Channel[] = guild.channels.cache.filter(channel => channel.type == 'voice')
                     .map(channel => this.voiceChannel2Channel(<VoiceChannel>channel));
                 botData.voiceChannels = voiceChannels;
                 res.json(botData);
@@ -137,6 +157,7 @@ export class ExpressApp {
         });
 
         this.app.post('/sound/add', this.privateRoutes, this.upload.single('file'), (req, res) => {
+            // TODO get user, check role and set user in new sound
             if(this.isValidAddSoundRequest(req)) {
                 let response = this.bot.getSoundService().addNewSoundFile(req.body.text, req.body.tags, req.file);
                 if(response.success){
@@ -158,20 +179,6 @@ export class ExpressApp {
             let filename = req.params.filename;
             res.download('./resources/sounds/' + filename);
         })
-
-        if((<Config>config).sslenabled != null && (<Config>config).sslenabled){
-            https.createServer({
-                key: FS.readFileSync('key.pem'),
-                cert: FS.readFileSync('cert.pem'),
-                passphrase: (<Config>config).certkey,
-            }, this.app).listen(this.PORT, () => {
-                console.log('HTTPS Server running on port ' + this.PORT);
-            });
-        }else{
-            this.app.listen(this.PORT, () => {
-                console.log('HTTP Server running on port ' + this.PORT);
-            });
-        }
     }
 
     private isValidAddSoundRequest(req:any): boolean{
@@ -198,7 +205,7 @@ export class ExpressApp {
         member.id = guildMember.id;
         member.joinedAt = guildMember.joinedAt;
         member.username = guildMember.user.username;
-        member.roles = guildMember.roles.map(role => this.discordRole2Role(role));
+        member.roles = guildMember.roles.cache.map(role => this.discordRole2Role(role));
         return member;
     }
 

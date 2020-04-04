@@ -4,7 +4,12 @@ dist/
 output.log
 resources/*
 !resources/README.md
-src/config/
+src/config/*
+!src/config/README.md
 cert.pem
 key.pem
 public/
+.greenlockrc
+greenlock.d/*
+!greenlock.d/README.md
+.travis.yml
