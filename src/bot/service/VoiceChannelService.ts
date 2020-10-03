@@ -34,7 +34,6 @@ export class VoiceChannelService {
             return connection.play(sound.location)
             .on("speaking", (speaking) => {
                 if(!speaking){
-                    console.log("Sound end");
                     this.isBussy = false;
                     ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
                     connection.disconnect();
