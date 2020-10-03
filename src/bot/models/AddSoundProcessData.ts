@@ -1,5 +1,4 @@
 import { GuildMember, TextChannel, Message, DMChannel, NewsChannel } from "discord.js";
-import { throws } from "assert";
 
 export class AddSoundProcessData {
 
@@ -19,23 +18,23 @@ export class AddSoundProcessData {
         this.tags = null;
     }
 
-    public setUser(user:GuildMember){
+    public setUser(user:GuildMember): void{
         this.user = user;
     }
 
-    public setChannel(channel:TextChannel | DMChannel | NewsChannel){
+    public setChannel(channel:TextChannel | DMChannel | NewsChannel): void{
         this.channel = channel;
     }
 
-    public setFileUrl(fileUrl:string){
+    public setFileUrl(fileUrl:string): void{
         this.fileUrl = fileUrl;
     }
 
-    public setText(text:string){
+    public setText(text:string): void{
         this.text = text;
     }
 
-    public setTags(tags:string){
+    public setTags(tags:string): void{
         this.tags = tags;
     }
 
@@ -55,7 +54,7 @@ export class AddSoundProcessData {
         return this.step;
     }
 
-    public increaseStep(){
+    public increaseStep(): void{
         this.step++;
     }
 

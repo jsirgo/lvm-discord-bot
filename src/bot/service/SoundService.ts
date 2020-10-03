@@ -1,7 +1,7 @@
-import Request from 'request';
-import FS from 'fs';
-import { SoundList, Sound } from '../interface';
-import { AddSoundProcessData, AddSoundProcessResponse } from '../models';
+import Request from "request";
+import FS from "fs";
+import { SoundList, Sound } from "../interface";
+import { AddSoundProcessData, AddSoundProcessResponse } from "../models";
 
 export class SoundService {
 
@@ -15,18 +15,18 @@ export class SoundService {
 
     private sounds:Array<Sound>;
 
-    private addSoundBussy:boolean = false;
+    private addSoundBussy = false;
 
     constructor(){
         this.loadSounds();
     }
 
-    public loadSounds(){
+    public loadSounds(): void{
         FS.readdir(this.RESOURCES_PATH, (err, files) => {
             this.sounds = new Array<Sound>();
             files.filter(file => file.match(this.FILE_PATTERN)).forEach(file => {
-                let jsonString = FS.readFileSync(this.RESOURCES_PATH+file,'utf8');
-                let dataList:SoundList = JSON.parse(jsonString);
+                const jsonString = FS.readFileSync(this.RESOURCES_PATH+file,"utf8");
+                const dataList:SoundList = JSON.parse(jsonString);
                 this.sounds = this.sounds.concat(dataList.sounds);
                 console.log("Loaded "+file+" data file");
             });
@@ -34,18 +34,18 @@ export class SoundService {
     }
 
     public getRandomSound(): Sound {
-        let randomIndex = Math.floor(Math.random() * this.sounds.length);
+        const randomIndex = Math.floor(Math.random() * this.sounds.length);
         return this.setSoundLocation(this.sounds[randomIndex]);
     }
 
     public getSound(soundName: string): Sound {
-        let matchSounds = this.sounds.filter((sound:Sound) => sound.tags.toLowerCase().includes(soundName.toLowerCase()));
+        const matchSounds = this.sounds.filter((sound:Sound) => sound.tags.toLowerCase().includes(soundName.toLowerCase()));
         if (matchSounds != null && matchSounds.length > 0) {
             if (matchSounds.length == 1) {
                 return this.setSoundLocation(matchSounds[0]);
             }
             else {
-                let randomIndex = Math.floor(Math.random() * matchSounds.length);
+                const randomIndex = Math.floor(Math.random() * matchSounds.length);
                 return this.setSoundLocation(matchSounds[randomIndex]);
             }
         }
@@ -53,7 +53,7 @@ export class SoundService {
     }
 
     public getSoundByFileName(fileName: string): Sound {
-        let sound = this.sounds.find((sound:Sound) => sound.filename == fileName);
+        const sound = this.sounds.find((sound:Sound) => sound.filename == fileName);
         if (sound == null) {
             console.log("Can´t get sound by filename: " + fileName);
             return null;
@@ -77,52 +77,52 @@ export class SoundService {
         return soundData;
     }
 
-    private isURL(url:string) {
+    private isURL(url:string): boolean{
         return this.URL_PATTERN.test(url);
     }
 
-    private isFilename(filename:string) {
+    private isFilename(filename:string): boolean{
         return this.SOUND_FILENAME_PATTERN.test(filename);
     }
 
     public addNewSound(addSoundProcessData:AddSoundProcessData):Promise<AddSoundProcessResponse> {
-        let promise = new Promise<AddSoundProcessResponse>((resolve, reject) => {
+        const promise = new Promise<AddSoundProcessResponse>((resolve) => {
             if(this.addSoundBussy){
                 console.error("Error importing sound: Other add sound sound request is being processed");
                 resolve(new AddSoundProcessResponse(false, "Error importing sound: Other add sound sound request is being processed, retry later."));
             }else{
                 this.addSoundBussy = true;
-                let tempName = addSoundProcessData.getFileUrl().split("/");
-                let fileName = tempName[tempName.length-1];
+                const tempName = addSoundProcessData.getFileUrl().split("/");
+                const fileName = tempName[tempName.length-1];
                 try{
                     if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
                         this.addSoundBussy = false;
                         console.error("Error importing sound: A file with this name already exists");
-                        let response = new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
+                        const response = new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
                         resolve(response);
                     }else{
-                        let sound:Sound = {
+                        const sound:Sound = {
                             filename: fileName,
                             text: addSoundProcessData.getText(),
                             tags: addSoundProcessData.getTags()
-                        }
+                        };
                         console.log("Importing sound: "+JSON.stringify(sound));
-                        Request.get(addSoundProcessData.getFileUrl()).on('error', (err) => {
+                        Request.get(addSoundProcessData.getFileUrl()).on("error", (err) => {
                             this.addSoundBussy = false;
                             console.error("Error getting file from "+addSoundProcessData.getFileUrl()+": "+err);
-                            let response = new AddSoundProcessResponse(false, "Error getting file from "+addSoundProcessData.getFileUrl());
+                            const response = new AddSoundProcessResponse(false, "Error getting file from "+addSoundProcessData.getFileUrl());
                             resolve(response);
-                        }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on('finish',() => {
+                        }).pipe(FS.createWriteStream(this.SOUNDS_PATH+fileName).on("finish",() => {
                             try{
                                 this.appendSoundToJSONFile(sound);
                                 this.addSoundBussy = false;
                                 console.log("Sound imported successfuly");
-                                let response = new AddSoundProcessResponse(true, null);
+                                const response = new AddSoundProcessResponse(true, null);
                                 resolve(response);
                             }catch(err){
                                 this.addSoundBussy = false;
                                 console.error("Error importing sound" + JSON.stringify(err));
-                                let response = new AddSoundProcessResponse(false, "Error importing sound");
+                                const response = new AddSoundProcessResponse(false, "Error importing sound");
                                 resolve(response);
                             }
                         }));
@@ -130,7 +130,7 @@ export class SoundService {
                 }catch(err){
                     this.addSoundBussy = false;
                     console.error("Error importing sound" + JSON.stringify(err));
-                    let response = new AddSoundProcessResponse(false, "Error importing sound");
+                    const response = new AddSoundProcessResponse(false, "Error importing sound");
                     resolve(response);
                 }
             } 
@@ -138,24 +138,24 @@ export class SoundService {
         return promise;
     }
 
-    public addNewSoundFile(text:string, tags:string, file:any):AddSoundProcessResponse {
+    public addNewSoundFile(text:string, tags:string, file: Express.Multer.File):AddSoundProcessResponse {
         if(this.addSoundBussy){
             console.error("Error importing sound: Other add sound sound request is being processed");
             return new AddSoundProcessResponse(false, "Error importing sound: Other add sound sound request is being processed, retry later.");
         }
         this.addSoundBussy = true;
         try{
-            let fileName = file.originalname;
+            const fileName = file.originalname;
             if (FS.existsSync(this.SOUNDS_PATH+fileName)) {
                 this.addSoundBussy = false;
                 console.error("Error importing sound: A file with this name already exists");
                 return new AddSoundProcessResponse(false, "Error importing sound: A file whith this name already exists");
             }else{
-                let sound:Sound = {
+                const sound:Sound = {
                     filename: fileName,
                     text: text,
                     tags: tags
-                }
+                };
                 console.log("Importing sound: "+JSON.stringify(sound));
                 this.copyFile(file.path, this.SOUNDS_PATH+fileName);
 
@@ -173,19 +173,19 @@ export class SoundService {
         } 
     }
 
-    private copyFile(filePath:string, newFilePath:string) {
-        var readStream = FS.createReadStream(filePath);
-        var writeStream = FS.createWriteStream(newFilePath);
+    private copyFile(filePath:string, newFilePath:string): void{
+        const readStream = FS.createReadStream(filePath);
+        const writeStream = FS.createWriteStream(newFilePath);
 
         readStream.pipe(writeStream);
     }
 
-    private appendSoundToJSONFile(sound:Sound) {
+    private appendSoundToJSONFile(sound:Sound): void{
         if(FS.existsSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME)){
-            let data = FS.readFileSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME,'utf8');
-            let soundDataList:SoundList = JSON.parse(data); 
-            soundDataList.sounds.push(sound)
-            let json = JSON.stringify(soundDataList); 
+            const data = FS.readFileSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME,"utf8");
+            const soundDataList:SoundList = JSON.parse(data); 
+            soundDataList.sounds.push(sound);
+            const json = JSON.stringify(soundDataList); 
             try{
                 FS.writeFileSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME, json);
             }catch(err){
@@ -193,11 +193,11 @@ export class SoundService {
                 throw err;
             }
         }else{
-            let soundDataList:SoundList = {
+            const soundDataList:SoundList = {
                 title: this.DEFAULT_DATA_FILE_TITLE,
                 sounds: [sound]
-            }
-            let json = JSON.stringify(soundDataList);
+            };
+            const json = JSON.stringify(soundDataList);
             try{
                 FS.writeFileSync(this.RESOURCES_PATH+this.DEFAULT_DATA_FILE_NAME, json);
             }catch(err){

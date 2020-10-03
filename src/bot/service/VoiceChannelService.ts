@@ -1,42 +1,48 @@
-import { Client, VoiceChannel } from "discord.js";
+import { ActivityType, Client, StreamDispatcher, VoiceChannel } from "discord.js";
 import { Sound } from "../interface";
 import { ClientUtils } from "../util";
 
 export class VoiceChannelService {
 
     private client:Client;
-    private isBussy:boolean = false;
+    private isBussy = false;
 
     constructor(client:Client){
         this.client = client;
     }
 
-    public playSoundInMultipleVoiceChannels(sound:Sound, channels:VoiceChannel[]){
+    public playSoundInMultipleVoiceChannels(sound:Sound, channels:VoiceChannel[]): void{
         if(channels != null && channels.length > 0){
-            let channel:VoiceChannel = channels.pop();
+            const channel:VoiceChannel = channels.pop();
             this.joinVoiceChannelAndPlaySound(sound, channel).then((dispatcher) => {
-                dispatcher.on('end', () => {
-                    this.playSoundInMultipleVoiceChannels(sound, channels);
+                dispatcher.on("speaking", (speaking) => {
+                    if(!speaking){
+                        this.playSoundInMultipleVoiceChannels(sound, channels);
+                    }
                 });
-            })
+            });
         }
     }
 
-    public async joinVoiceChannelAndPlaySound(sound:Sound, voiceChannel:VoiceChannel) {
+    public async joinVoiceChannelAndPlaySound(sound:Sound, voiceChannel:VoiceChannel): Promise<StreamDispatcher>{
         return voiceChannel.join().then(connection => {
             this.isBussy = true;
-            let previousStatus = this.client.user.presence.status;
-            let previousActivityName = this.client.user.presence.activities[0] != null ? this.client.user.presence.activities[0].name : null;
-            let PreviousActivityType = this.client.user.presence.activities[0] != null ? this.client.user.presence.activities[0].type : null;
-            ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_IDLE, sound.text + " in " + voiceChannel.name, ClientUtils.CLIENT_ACTIVITY_TYPE_STREAMING);
-            return connection.play(sound.location).on('end', () => {
-                this.isBussy = false;
-                ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
-                connection.disconnect();
-            }).on('error', (error) => {
-                this.isBussy = false;
-                ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
+            const previousStatus = this.client.user.presence.status;
+            const previousActivityName = this.client.user.presence.activities[0] != null ? this.client.user.presence.activities[0].name : null;
+            const PreviousActivityType = this.client.user.presence.activities[0] != null ? this.client.user.presence.activities[0].type : null;
+            ClientUtils.setPresence(this.client, ClientUtils.CLIENT_STATUS_IDLE, sound.text + " in " + voiceChannel.name, <ActivityType>ClientUtils.CLIENT_ACTIVITY_TYPE_STREAMING);
+            return connection.play(sound.location)
+            .on("speaking", (speaking) => {
+                if(!speaking){
+                    console.log("Sound end");
+                    this.isBussy = false;
+                    ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
+                    connection.disconnect();
+                }
+            }).on("error", (error) => {
                 console.error("Error: "+error);
+                this.isBussy = false;
+                ClientUtils.setPresence(this.client, previousStatus, previousActivityName, PreviousActivityType);
             });
         });
     }
@@ -46,7 +52,7 @@ export class VoiceChannelService {
     }
 
     public getVoiceChannel(channelName:string):VoiceChannel {
-        let channels = this.client.channels.cache.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelName.toLowerCase()));
+        const channels = this.client.channels.cache.filter(channel => channel instanceof VoiceChannel && channel.name.toLowerCase().includes(channelName.toLowerCase()));
         if(channels.size === 1){
             return <VoiceChannel>channels.first();
         }else{

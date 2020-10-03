@@ -1,8 +1,8 @@
-import { Member } from './Member';
+import { Member } from "./Member";
 
 export class Channel {
   members: Member[];
   name: string;
-  parentID: String;
+  parentID: string;
   id: string;
 }

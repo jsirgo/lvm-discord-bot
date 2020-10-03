@@ -1,8 +1,8 @@
 export class AddSoundProcessResponse {
     success: boolean;
-    errorMessage: String;
+    errorMessage: string;
 
-    constructor(success:boolean, errorMessage:String){
+    constructor(success:boolean, errorMessage:string){
         this.success = success;
         this.errorMessage = errorMessage;
     }
